@@ -4,6 +4,7 @@ import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import javax.persistence.CascadeType;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.JoinColumn;
@@ -14,6 +15,7 @@ import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.Temporal;
 import javax.persistence.TemporalType;
+import javax.persistence.FetchType;
 
 /**
  * Contains the general documentation fields of a process that are not used for
@@ -75,7 +77,7 @@ public class ProcessDocumentation extends AbstractEntity implements Cloneable {
 	@Column(name = "sampling")
 	private String sampling;
 
-	@OneToMany
+	@OneToMany(cascade = { CascadeType.ALL }, orphanRemoval = true,fetch=FetchType.EAGER)
 	@JoinTable(name = "tbl_process_sources", joinColumns = { @JoinColumn(name = "f_process_doc") }, inverseJoinColumns = { @JoinColumn(name = "f_source") })
 	private final List<Source> sources = new ArrayList<>();
 

@@ -48,7 +48,7 @@ public class Upgrade2 implements IUpgrade {
 				"BIGINT");
 		util.createColumn("tbl_exchanges", "description", "description "
 				+ util.getTextType());
-		util.createColumn("tbl_flows", "synonyms", "synonyms VARCHAR(32672)");
+		util.createColumn("tbl_flows", "synonyms", "synonyms TEXT");
 		Upgrade2Files.apply(database);
 	}
 
@@ -127,7 +127,7 @@ public class Upgrade2 implements IUpgrade {
 				"CREATE TABLE tbl_currencies ( " + "id BIGINT NOT NULL, "
 						+ "name VARCHAR(255), " + "ref_id VARCHAR(36), "
 						+ "version BIGINT, " + "last_change BIGINT, "
-						+ "f_category BIGINT, " + "description CLOB(64 K), "
+						+ "f_category BIGINT, " + "description TEXT, "
 						+ "code VARCHAR(255), " + "conversion_factor DOUBLE, "
 						+ "f_reference_currency BIGINT, "
 						+ "PRIMARY KEY (id)) ");
@@ -138,17 +138,17 @@ public class Upgrade2 implements IUpgrade {
 				+ "id BIGINT NOT NULL, " + "ref_id VARCHAR(36), "
 				+ "name VARCHAR(255), " + "version BIGINT, "
 				+ "last_change BIGINT, " + "f_category BIGINT, "
-				+ "description CLOB(64 K), "
+				+ "description TEXT, "
 				+ "activity_variable VARCHAR(255), "
 				+ "f_activity_quantity BIGINT, " + "f_activity_unit BIGINT, "
 				+ "unit_of_measurement VARCHAR(255), "
-				+ "evaluation_scheme CLOB(64 K), " + "PRIMARY KEY (id)) ";
+				+ "evaluation_scheme TEXT, " + "PRIMARY KEY (id)) ";
 		util.createTable("tbl_social_indicators", indicators);
 		String aspects = "CREATE TABLE tbl_social_aspects ( "
 				+ "id BIGINT NOT NULL, " + "f_process BIGINT, "
 				+ "f_indicator BIGINT, " + "activity_value DOUBLE, "
 				+ "raw_amount VARCHAR(255), " + "risk_level VARCHAR(255), "
-				+ "comment CLOB(64 K), " + "f_source BIGINT, "
+				+ "comment TEXT, " + "f_source BIGINT, "
 				+ "quality VARCHAR(255), " + "PRIMARY KEY (id)) ";
 		util.createTable("tbl_social_aspects", aspects);
 	}

@@ -7,7 +7,7 @@ import org.openlca.core.database.ParameterDao;
 import org.openlca.core.model.Parameter;
 import org.openlca.core.model.ParameterScope;
 import org.openlca.core.model.Process;
-import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.util.LangString;
 import org.openlca.ilcd.util.ParameterExtension;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
@@ -47,8 +47,11 @@ class ProcessParameterConversion {
 
 	private List<org.openlca.ilcd.processes.Parameter> processParams(
 			Process process) {
-		List<org.openlca.ilcd.processes.Parameter> iParameters = new ArrayList<>();
-		for (Parameter oParam : process.getParameters()) {
+		List<org.openlca.ilcd.processes.Parameter> iParameters = new ArrayList<>();	
+		ParameterDao dao = new ParameterDao(config.db);
+		//Hibernate.initialize(process.getParameters());
+		//for (Parameter oParam : process.getParameters()) {
+		for (Parameter oParam : dao.getPrametersForProcess(process.getId())) {
 			if (!valid(oParam))
 				continue;
 			org.openlca.ilcd.processes.Parameter iParam = convertParam(oParam);
@@ -60,12 +63,14 @@ class ProcessParameterConversion {
 
 	private org.openlca.ilcd.processes.Parameter convertParam(Parameter oParam) {
 		org.openlca.ilcd.processes.Parameter iParameter = new org.openlca.ilcd.processes.Parameter();
-		iParameter.name = oParam.getName();
-		iParameter.formula = oParam.getFormula();
-		iParameter.mean = oParam.getValue();
+		iParameter.setName(oParam.getName());
+		iParameter.setFormula(oParam.getFormula());
+		iParameter.setMeanValue(oParam.getValue());
 		new UncertaintyConverter().map(oParam, iParameter);
 		if (Strings.notEmpty(oParam.getDescription())) {
-			LangString.set(iParameter.comment, oParam.getDescription(), config.lang);
+			iParameter.getComment()
+					.add(LangString.label(oParam.getDescription(),
+							config.ilcdConfig));
 		}
 		return iParameter;
 	}

@@ -20,7 +20,7 @@ class Exchanges {
 		Out.put(obj, "baseUncertainty", e.getBaseUncertainty());
 		Out.put(obj, "amount", e.getAmountValue());
 		Out.put(obj, "amountFormula", e.getAmountFormula());
-		Out.put(obj, "dqEntry", e.getDqEntry());
+		Out.put(obj, "pedigreeUncertainty", e.getPedigreeUncertainty());
 		Out.put(obj, "description", e.description);
 		Out.put(obj, "costFormula", e.costFormula);
 		Out.put(obj, "costValue", e.costValue);
@@ -37,7 +37,11 @@ class Exchanges {
 		if (conf.exportProviders)
 			p = References.create(ModelType.PROCESS, pId, conf, false);
 		else if (conf.db != null)
-			p = References.create(new ProcessDao(conf.db).getDescriptor(pId));
+		{  
+			org.openlca.core.model.Process process = new ProcessDao(conf.db).getForId(pId);
+			p = References.create(process,conf,false);	
+			//p = References.create(new ProcessDao(conf.db).getDescriptor(pId));
+		}
 		Out.put(obj, "defaultProvider", p);
 		Out.put(obj, "flow", e.getFlow(), conf);
 		if (e.getFlow() != null) {

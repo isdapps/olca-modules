@@ -12,6 +12,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.FetchType;
 
 @Entity
 @Table(name = "tbl_processes")
@@ -21,11 +22,11 @@ public class Process extends CategorizedEntity {
 	@Enumerated(EnumType.STRING)
 	private AllocationMethod defaultAllocationMethod;
 
-	@OneToMany(cascade = { CascadeType.ALL }, orphanRemoval = true)
+	@OneToMany(cascade = { CascadeType.ALL }, orphanRemoval = true, fetch=FetchType.EAGER)
 	@JoinColumn(name = "f_process")
 	private final List<AllocationFactor> allocationFactors = new ArrayList<>();
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch=FetchType.EAGER)
 	@JoinColumn(name = "f_owner")
 	private List<Exchange> exchanges = new ArrayList<>();
 
@@ -59,21 +60,6 @@ public class Process extends CategorizedEntity {
 	@OneToOne
 	@JoinColumn(name = "f_currency")
 	public Currency currency;
-	
-	@OneToOne
-	@JoinColumn(name = "f_dq_system")
-	public DQSystem dqSystem;
-	
-	@Column(name = "dq_entry")
-	public String dqEntry;
-
-	@OneToOne
-	@JoinColumn(name = "f_exchange_dq_system")
-	public DQSystem exchangeDqSystem;
-
-	@OneToOne
-	@JoinColumn(name = "f_social_dq_system")
-	public DQSystem socialDqSystem;
 
 	public ProcessDocumentation getDocumentation() {
 		return documentation;

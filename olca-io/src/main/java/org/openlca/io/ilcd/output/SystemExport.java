@@ -1,22 +1,24 @@
 package org.openlca.io.ilcd.output;
 
+import java.math.BigInteger;
+
 import org.openlca.core.database.FlowDao;
 import org.openlca.core.database.ProcessDao;
 import org.openlca.core.math.ReferenceAmount;
 import org.openlca.core.model.ProcessLink;
 import org.openlca.core.model.ProductSystem;
 import org.openlca.core.model.descriptors.BaseDescriptor;
-import org.openlca.ilcd.commons.ClassificationInfo;
+import org.openlca.ilcd.commons.ClassificationInformation;
 import org.openlca.ilcd.commons.DataSetReference;
 import org.openlca.ilcd.commons.ExchangeDirection;
-import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.commons.Other;
 import org.openlca.ilcd.commons.QuantitativeReferenceType;
 import org.openlca.ilcd.io.DataStoreException;
-import org.openlca.ilcd.processes.DataSetInfo;
+import org.openlca.ilcd.processes.DataSetInformation;
 import org.openlca.ilcd.processes.Exchange;
+import org.openlca.ilcd.processes.ExchangeList;
 import org.openlca.ilcd.processes.Process;
-import org.openlca.ilcd.processes.ProcessInfo;
+import org.openlca.ilcd.processes.ProcessInformation;
 import org.openlca.ilcd.processes.ProcessName;
 import org.openlca.ilcd.processes.QuantitativeReference;
 import org.openlca.ilcd.productmodel.Connector;
@@ -24,6 +26,7 @@ import org.openlca.ilcd.productmodel.ConsumedBy;
 import org.openlca.ilcd.productmodel.ProcessNode;
 import org.openlca.ilcd.productmodel.Product;
 import org.openlca.ilcd.productmodel.ProductModel;
+import org.openlca.ilcd.util.LangString;
 import org.openlca.ilcd.util.ProcessInfoExtension;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,22 +58,22 @@ public class SystemExport {
 
 	private Process createProcess() {
 		Process process = new Process();
-		ProcessInfo info = new ProcessInfo();
-		process.processInfo = info;
-		info.dataSetInfo = makeDataSetInfo();
-		info.quantitativeReference = makeQuantitativeReference();
+		ProcessInformation info = new ProcessInformation();
+		process.setProcessInformation(info);
+		info.setDataSetInformation(makeDataSetInfo());
+		info.setQuantitativeReference(makeQuantitativeReference());
 		addRefProcessInfo(info);
 		addExchange(process);
 		addProductModel(info);
 		return process;
 	}
 
-	private void addProductModel(ProcessInfo info) {
+	private void addProductModel(ProcessInformation info) {
 		ProductModel model = new ProductModel();
 		model.setName(system.getName());
 		Other other = new Other();
-		other.any.add(model);
-		info.other = other;
+		other.getAny().add(model);
+		info.setOther(other);
 		exportProcesses(model);
 		exportLinks(model);
 		// addParamaters(model);
@@ -86,7 +89,7 @@ public class SystemExport {
 			ProcessNode node = new ProcessNode();
 			node.setId(proc.getRefId());
 			node.setName(proc.getName());
-			node.setUri(ref.uri);
+			node.setUri(ref.getUri());
 			node.setUuid(proc.getRefId());
 			model.getNodes().add(node);
 		}
@@ -102,13 +105,15 @@ public class SystemExport {
 			connector.setId(Integer.toString(++c));
 
 			// provider process
-			BaseDescriptor provider = processDao.getDescriptor(link.providerId);
+			//BaseDescriptor provider = processDao.getDescriptor(link.providerId);
+			org.openlca.core.model.Process provider = processDao.getForId(link.providerId);				
 			if (provider == null)
 				continue;
 			connector.setOrigin(provider.getRefId());
 
 			// product flow
-			BaseDescriptor flow = flowDao.getDescriptor(link.flowId);
+			//BaseDescriptor flow = flowDao.getDescriptor(link.flowId);
+			org.openlca.core.model.Flow flow = flowDao.getForId(link.flowId);			
 			if (flow == null)
 				continue;
 			Product product = new Product();
@@ -120,7 +125,8 @@ public class SystemExport {
 			ConsumedBy consumedBy = new ConsumedBy();
 			product.setConsumedBy(consumedBy);
 			consumedBy.setFlowUUID(flow.getRefId());
-			BaseDescriptor recipient = processDao.getDescriptor(link.processId);
+			//BaseDescriptor recipient = processDao.getDescriptor(link.processId);
+			org.openlca.core.model.Process recipient = processDao.getForId(link.processId);				
 			if (recipient == null)
 				continue;
 			consumedBy.setProcessId(recipient.getRefId());
@@ -134,16 +140,18 @@ public class SystemExport {
 	private void addExchange(Process process) {
 		org.openlca.core.model.Exchange refExchange = system
 				.getReferenceExchange();
+		ExchangeList list = new ExchangeList();
+		process.setExchanges(list);
 		Exchange exchange = new Exchange();
-		process.exchanges.add(exchange);
-		exchange.id = 1;
-		exchange.exchangeDirection = ExchangeDirection.OUTPUT;
+		list.getExchanges().add(exchange);
+		exchange.setDataSetInternalID(new BigInteger("1"));
+		exchange.setExchangeDirection(ExchangeDirection.OUTPUT);
 		DataSetReference flowRef = ExportDispatch.forwardExportCheck(
 				refExchange.getFlow(), config);
-		exchange.flow = flowRef;
+		exchange.setFlow(flowRef);
 		double refAmount = ReferenceAmount.get(system);
-		exchange.meanAmount = refAmount;
-		exchange.resultingAmount = refAmount;
+		exchange.setMeanAmount(refAmount);
+		exchange.setResultingAmount(refAmount);
 	}
 
 	private boolean canRun() {
@@ -153,37 +161,37 @@ public class SystemExport {
 				&& system.getReferenceProcess() != null;
 	}
 
-	private DataSetInfo makeDataSetInfo() {
-		DataSetInfo info = new DataSetInfo();
-		info.uuid = system.getRefId();
+	private DataSetInformation makeDataSetInfo() {
+		DataSetInformation info = new DataSetInformation();
+		info.setUUID(system.getRefId());
 		ProcessName processName = new ProcessName();
-		info.name = processName;
+		info.setName(processName);
 		String name = system.getName() + " (product system)";
-		LangString.set(processName.name, name, config.lang);
+		LangString.addLabel(processName.getBaseName(), name, config.ilcdConfig);
 		if (system.getDescription() != null) {
-			LangString.set(info.comment,
-					system.getDescription(), config.lang);
+			LangString.addFreeText(info.getGeneralComment(),
+					system.getDescription(), config.ilcdConfig);
 		}
 		addClassification(info);
 		return info;
 	}
 
-	private void addClassification(DataSetInfo info) {
+	private void addClassification(DataSetInformation info) {
 		CategoryConverter conv = new CategoryConverter();
-		ClassificationInfo ci = conv
+		ClassificationInformation classInfo = conv
 				.getClassificationInformation(system.getCategory());
-		if (ci != null)
-			info.classifications.addAll(ci.classifications);
+		if (classInfo != null)
+			info.setClassificationInformation(classInfo);
 	}
 
 	private QuantitativeReference makeQuantitativeReference() {
 		QuantitativeReference qRef = new QuantitativeReference();
-		qRef.type = QuantitativeReferenceType.REFERENCE_FLOWS;
-		qRef.referenceFlows.add(1);
+		qRef.setType(QuantitativeReferenceType.REFERENCE_FLOW_S);
+		qRef.getReferenceToReferenceFlow().add(new BigInteger("1"));
 		return qRef;
 	}
 
-	private void addRefProcessInfo(ProcessInfo info) {
+	private void addRefProcessInfo(ProcessInformation info) {
 		org.openlca.core.model.Process refProcess = system
 				.getReferenceProcess();
 		ProcessInfoExtension ext = new ProcessInfoExtension(info);
