@@ -47,8 +47,11 @@ class ProcessParameterConversion {
 
 	private List<org.openlca.ilcd.processes.Parameter> processParams(
 			Process process) {
-		List<org.openlca.ilcd.processes.Parameter> iParameters = new ArrayList<>();
-		for (Parameter oParam : process.getParameters()) {
+		List<org.openlca.ilcd.processes.Parameter> iParameters = new ArrayList<>();	
+		ParameterDao dao = new ParameterDao(config.db);
+		//Hibernate.initialize(process.getParameters());
+		//for (Parameter oParam : process.getParameters()) {
+		for (Parameter oParam : dao.getPrametersForProcess(process.getId())) {
 			if (!valid(oParam))
 				continue;
 			org.openlca.ilcd.processes.Parameter iParam = convertParam(oParam);

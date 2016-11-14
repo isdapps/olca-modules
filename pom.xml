@@ -25,6 +25,7 @@
 		<module>olca-io</module>
 		<module>olca-jsonld</module>
 		<module>olca-simapro-csv</module>
+		<module>olca-usda-template</module>
 	</modules>
 
 </project>

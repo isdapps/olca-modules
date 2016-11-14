@@ -48,10 +48,10 @@ class Upgrade5 implements IUpgrade {
 		query.setCursorName("UPDATE_LINKS");
 		ResultSet cursor = query.executeQuery(
 				"SELECT f_process, f_flow FROM tbl_process_links "
-						+ "FOR UPDATE of f_exchange");
+						+ "FOR UPDATE ");
 		PreparedStatement update = con.prepareStatement(
-				"UPDATE tbl_process_links SET f_exchange = ? " +
-						"WHERE CURRENT OF UPDATE_LINKS");
+				"UPDATE tbl_process_links SET f_exchange = ? " );
+				//+ "WHERE CURRENT OF UPDATE_LINKS");
 		while (cursor.next()) {
 			long processId = cursor.getLong(1);
 			long flowId = cursor.getLong(2);

@@ -37,7 +37,11 @@ class Exchanges {
 		if (conf.exportProviders)
 			p = References.create(ModelType.PROCESS, pId, conf, false);
 		else if (conf.db != null)
-			p = References.create(new ProcessDao(conf.db).getDescriptor(pId));
+		{  
+			org.openlca.core.model.Process process = new ProcessDao(conf.db).getForId(pId);
+			p = References.create(process,conf,false);	
+			//p = References.create(new ProcessDao(conf.db).getDescriptor(pId));
+		}
 		Out.put(obj, "defaultProvider", p);
 		Out.put(obj, "flow", e.getFlow(), conf);
 		if (e.getFlow() != null) {

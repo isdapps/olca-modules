@@ -90,4 +90,10 @@ public class ParameterDao extends
 		return getCount(jpql, parameters) > 0;
 	}
 
+	public List<Parameter> getPrametersForProcess(long id) {
+		String jpql = "select p from Process ps left join ps.parameters p where ps.id = :id";
+		Map<String, Object> args = new HashMap<>();
+		args.put("id", id);
+		return getAll(jpql, args);
+	}	
 }

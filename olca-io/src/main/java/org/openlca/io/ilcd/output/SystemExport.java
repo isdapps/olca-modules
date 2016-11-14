@@ -105,13 +105,15 @@ public class SystemExport {
 			connector.setId(Integer.toString(++c));
 
 			// provider process
-			BaseDescriptor provider = processDao.getDescriptor(link.providerId);
+			//BaseDescriptor provider = processDao.getDescriptor(link.providerId);
+			org.openlca.core.model.Process provider = processDao.getForId(link.providerId);				
 			if (provider == null)
 				continue;
 			connector.setOrigin(provider.getRefId());
 
 			// product flow
-			BaseDescriptor flow = flowDao.getDescriptor(link.flowId);
+			//BaseDescriptor flow = flowDao.getDescriptor(link.flowId);
+			org.openlca.core.model.Flow flow = flowDao.getForId(link.flowId);			
 			if (flow == null)
 				continue;
 			Product product = new Product();
@@ -123,7 +125,8 @@ public class SystemExport {
 			ConsumedBy consumedBy = new ConsumedBy();
 			product.setConsumedBy(consumedBy);
 			consumedBy.setFlowUUID(flow.getRefId());
-			BaseDescriptor recipient = processDao.getDescriptor(link.processId);
+			//BaseDescriptor recipient = processDao.getDescriptor(link.processId);
+			org.openlca.core.model.Process recipient = processDao.getForId(link.processId);				
 			if (recipient == null)
 				continue;
 			consumedBy.setProcessId(recipient.getRefId());
