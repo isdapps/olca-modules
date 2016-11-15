@@ -107,7 +107,8 @@ class ExchangeConversion {
 			return;
 		try {
 			ProcessDao dao = new ProcessDao(config.db);
-			ProcessDescriptor d = dao.getDescriptor(provider);
+			//ProcessDescriptor d = dao.getDescriptor(provider);
+			org.openlca.core.model.Process d = dao.getForId(provider);
 			if (d != null)
 				ext.setDefaultProvider(d.getRefId());
 		} catch (Exception e) {
