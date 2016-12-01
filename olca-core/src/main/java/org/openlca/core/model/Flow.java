@@ -13,6 +13,7 @@ import javax.persistence.JoinColumn;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
+import javax.persistence.FetchType;
 
 @Entity
 @Table(name = "tbl_flows")
@@ -25,7 +26,7 @@ public class Flow extends CategorizedEntity {
 	@Column(name = "cas_number")
 	private String casNumber;
 
-	@OneToMany(cascade = { CascadeType.ALL }, orphanRemoval = true)
+	@OneToMany(cascade = { CascadeType.ALL }, orphanRemoval = true, fetch=FetchType.EAGER)
 	@JoinColumn(name = "f_flow")
 	private final List<FlowPropertyFactor> flowPropertyFactors = new ArrayList<>();
 
