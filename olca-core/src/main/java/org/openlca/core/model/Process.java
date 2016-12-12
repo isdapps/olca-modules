@@ -34,7 +34,7 @@ public class Process extends CategorizedEntity {
 	@JoinColumn(name = "f_location")
 	private Location location;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch=FetchType.EAGER)
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "f_owner")
 	private final List<Parameter> parameters = new ArrayList<>();
 
@@ -53,7 +53,7 @@ public class Process extends CategorizedEntity {
 	@Column(name = "infrastructure_process")
 	private boolean infrastructureProcess;
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch=FetchType.EAGER )
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
 	@JoinColumn(name = "f_process")
 	public final List<SocialAspect> socialAspects = new ArrayList<>();
 
