@@ -13,6 +13,8 @@ import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
 import javax.persistence.Table;
 import javax.persistence.FetchType;
+import org.hibernate.annotations.Fetch;
+import org.hibernate.annotations.FetchMode;
 
 @Entity
 @Table(name = "tbl_processes")
@@ -26,7 +28,8 @@ public class Process extends CategorizedEntity {
 	@JoinColumn(name = "f_process")
 	private final List<AllocationFactor> allocationFactors = new ArrayList<>();
 
-	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true, fetch=FetchType.EAGER)
+	@OneToMany(cascade = CascadeType.ALL, orphanRemoval = true)
+	@Fetch(FetchMode.JOIN)
 	@JoinColumn(name = "f_owner")
 	private List<Exchange> exchanges = new ArrayList<>();
 
