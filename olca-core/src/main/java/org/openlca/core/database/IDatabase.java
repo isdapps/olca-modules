@@ -15,7 +15,7 @@ public interface IDatabase extends Closeable, INotifiable {
 	 * The current database schema version of this package. Together with the
 	 * getVersion-method this can be used to check for updates of a database.
 	 */
-	int CURRENT_VERSION = 5;
+	int CURRENT_VERSION = 7;
 
 	/**
 	 * Creates a native SQL connection to the underlying database. The
@@ -27,13 +27,6 @@ public interface IDatabase extends Closeable, INotifiable {
 	 * Returns the entity manager factory from the database.
 	 */
 	EntityManagerFactory getEntityFactory();
-
-	/**
-	 * Creates a new DAO for the given class. DAOs support the standard
-	 * operations like insert, update, or delete. Alternatively, specific DAOs
-	 * can be created using the entity manager factory from this class.
-	 */
-	<T> BaseDao<T> createDao(Class<T> clazz);
 
 	/**
 	 * Returns the database name.

@@ -2,16 +2,16 @@ package org.openlca.io.ilcd.output;
 
 import org.openlca.core.model.Actor;
 import org.openlca.core.model.Version;
-import org.openlca.ilcd.commons.ClassificationInformation;
-import org.openlca.ilcd.contacts.AdministrativeInformation;
+import org.openlca.ilcd.commons.Classification;
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.commons.Publication;
+import org.openlca.ilcd.contacts.AdminInfo;
 import org.openlca.ilcd.contacts.Contact;
-import org.openlca.ilcd.contacts.ContactInformation;
-import org.openlca.ilcd.contacts.DataEntry;
-import org.openlca.ilcd.contacts.DataSetInformation;
-import org.openlca.ilcd.contacts.Publication;
+import org.openlca.ilcd.contacts.ContactInfo;
+import org.openlca.ilcd.contacts.DataSetInfo;
 import org.openlca.ilcd.io.DataStoreException;
-import org.openlca.ilcd.util.LangString;
-import org.openlca.ilcd.util.Reference;
+import org.openlca.ilcd.util.Refs;
 
 public class ActorExport {
 
@@ -32,35 +32,34 @@ public class ActorExport {
 			return config.store.get(Contact.class, actor.getRefId());
 		this.actor = actor;
 		Contact contact = new Contact();
-		contact.setVersion("1.1");
-		ContactInformation info = new ContactInformation();
-		contact.setContactInformation(info);
-		info.setDataSetInformation(makeDataSetInfo());
-		contact.setAdministrativeInformation(makeAdminInfo());
-		config.store.put(contact, actor.getRefId());
+		contact.version = "1.1";
+		ContactInfo info = new ContactInfo();
+		contact.contactInfo = info;
+		info.dataSetInfo = makeDataSetInfo();
+		contact.adminInfo = makeAdminInfo();
+		config.store.put(contact);
 		this.actor = null;
 		return contact;
 	}
 
-	private DataSetInformation makeDataSetInfo() {
-		DataSetInformation dataSetInfo = new DataSetInformation();
-		dataSetInfo.setUUID(actor.getRefId());
-		LangString.addLabel(dataSetInfo.getName(), actor.getName(),
-				config.ilcdConfig);
-		dataSetInfo.setEmail(actor.getEmail());
-		dataSetInfo.setTelefax(actor.getTelefax());
-		dataSetInfo.setTelephone(actor.getTelephone());
-		dataSetInfo.setWWWAddress(actor.getWebsite());
-		addAddress(dataSetInfo);
+	private DataSetInfo makeDataSetInfo() {
+		DataSetInfo info = new DataSetInfo();
+		info.uuid = actor.getRefId();
+		LangString.set(info.name, actor.getName(), config.lang);
+		info.email = actor.getEmail();
+		info.telefax = actor.getTelefax();
+		info.telephone = actor.getTelephone();
+		info.wwwAddress = actor.getWebsite();
+		addAddress(info);
 		if (actor.getDescription() != null) {
-			LangString.addShortText(dataSetInfo.getDescription(),
-					actor.getDescription(), config.ilcdConfig);
+			LangString.set(info.description,
+					actor.getDescription(), config.lang);
 		}
-		addClassification(dataSetInfo);
-		return dataSetInfo;
+		addClassification(info);
+		return info;
 	}
 
-	private void addAddress(DataSetInformation dataSetInfo) {
+	private void addAddress(DataSetInfo dataSetInfo) {
 		String address = actor.getAddress();
 		if (address == null)
 			return;
@@ -68,40 +67,39 @@ public class ActorExport {
 			address += ", " + actor.getZipCode();
 		if (actor.getCity() != null)
 			address += " " + actor.getCity();
-		LangString.addShortText(dataSetInfo.getContactAddress(), address,
-				config.ilcdConfig);
+		LangString.set(dataSetInfo.contactAddress, address,
+				config.lang);
 	}
 
-	private void addClassification(DataSetInformation dataSetInfo) {
+	private void addClassification(DataSetInfo dataSetInfo) {
 		if (actor.getCategory() == null)
 			return;
 		CategoryConverter converter = new CategoryConverter();
-		ClassificationInformation classification = converter
-				.getClassificationInformation(actor.getCategory());
+		Classification classification = converter.getClassification(
+				actor.getCategory());
 		if (classification != null) {
-			dataSetInfo.setClassificationInformation(classification);
+			dataSetInfo.classifications.add(classification);
 		}
 	}
 
-	private AdministrativeInformation makeAdminInfo() {
-		AdministrativeInformation info = new AdministrativeInformation();
+	private AdminInfo makeAdminInfo() {
+		AdminInfo info = new AdminInfo();
 		DataEntry entry = new DataEntry();
-		info.setDataEntry(entry);
-		entry.setTimeStamp(Out.getTimestamp(actor));
-		entry.getReferenceToDataSetFormat().add(
-				Reference.forIlcdFormat(config.ilcdConfig));
+		info.dataEntry = entry;
+		entry.timeStamp = Out.getTimestamp(actor);
+		entry.formats.add(Refs.ilcd());
 		addPublication(info);
 		return info;
 	}
 
-	private void addPublication(AdministrativeInformation info) {
+	private void addPublication(AdminInfo info) {
 		Publication pub = new Publication();
-		info.setPublication(pub);
-		pub.setDataSetVersion(Version.asString(actor.getVersion()));
+		info.publication = pub;
+		pub.version = Version.asString(actor.getVersion());
 		if (baseUri == null)
 			baseUri = "http://openlca.org/ilcd/resource/";
 		if (!baseUri.endsWith("/"))
 			baseUri += "/";
-		pub.setPermanentDataSetURI(baseUri + "contacts/" + actor.getRefId());
+		pub.uri = baseUri + "contacts/" + actor.getRefId();
 	}
 }

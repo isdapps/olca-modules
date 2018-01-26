@@ -9,7 +9,6 @@ import java.util.Map;
 import javax.persistence.EntityManagerFactory;
 
 import org.eclipse.persistence.jpa.PersistenceProvider;
-import org.openlca.core.database.BaseDao;
 import org.openlca.core.database.DatabaseException;
 import org.openlca.core.database.DbUtils;
 import org.openlca.core.database.IDatabase;
@@ -17,8 +16,8 @@ import org.openlca.core.database.Notifiable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.jolbox.bonecp.BoneCP;
-import com.jolbox.bonecp.BoneCPConfig;
+import com.zaxxer.hikari.HikariConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 /**
  * IDatabase implementation for MySQL database. The URL schema is
@@ -31,7 +30,7 @@ public class MySQLDatabase extends Notifiable implements IDatabase {
 	private String url;
 	private String user;
 	private String password;
-	private BoneCP connectionPool;
+	private HikariDataSource connectionPool;
 	private final String persistenceUnit;
 	private File fileStorageLocation;
 
@@ -70,12 +69,11 @@ public class MySQLDatabase extends Notifiable implements IDatabase {
 
 	private void initConnectionPool() {
 		try {
-			BoneCPConfig config = new BoneCPConfig();
+			HikariConfig config = new HikariConfig();
 			config.setJdbcUrl(url);
-			config.setUser(user);
+			config.setUsername(user);
 			config.setPassword(password);
-			config.setLazyInit(true);
-			connectionPool = new BoneCP(config);
+			connectionPool = new HikariDataSource(config);
 		} catch (Exception e) {
 			log.error("failed to initialize connection pool", e);
 			throw new DatabaseException("Could not create a connection", e);
@@ -121,18 +119,13 @@ public class MySQLDatabase extends Notifiable implements IDatabase {
 			if (entityFactory != null && entityFactory.isOpen())
 				entityFactory.close();
 			if (connectionPool != null)
-				connectionPool.shutdown();
+				connectionPool.close();
 		} catch (Exception e) {
 			log.error("failed to close database", e);
 		} finally {
 			entityFactory = null;
 			connectionPool = null;
 		}
-	}
-
-	@Override
-	public <T> BaseDao<T> createDao(Class<T> clazz) {
-		return new BaseDao<>(clazz, this);
 	}
 
 	@Override

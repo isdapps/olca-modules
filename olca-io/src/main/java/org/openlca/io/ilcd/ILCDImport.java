@@ -2,19 +2,17 @@ package org.openlca.io.ilcd;
 
 import java.util.Iterator;
 
+import org.openlca.core.database.FlowDao;
+import org.openlca.ilcd.commons.IDataSet;
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.contacts.Contact;
 import org.openlca.ilcd.flowproperties.FlowProperty;
 import org.openlca.ilcd.flows.Flow;
 import org.openlca.ilcd.methods.LCIAMethod;
+import org.openlca.ilcd.models.Model;
 import org.openlca.ilcd.processes.Process;
 import org.openlca.ilcd.sources.Source;
 import org.openlca.ilcd.units.UnitGroup;
-import org.openlca.ilcd.util.FlowBag;
-import org.openlca.ilcd.util.FlowPropertyBag;
-import org.openlca.ilcd.util.MethodBag;
-import org.openlca.ilcd.util.ProcessBag;
-import org.openlca.ilcd.util.SourceBag;
-import org.openlca.ilcd.util.UnitGroupBag;
 import org.openlca.io.FileImport;
 import org.openlca.io.ImportEvent;
 import org.openlca.io.ilcd.input.ContactImport;
@@ -26,6 +24,7 @@ import org.openlca.io.ilcd.input.ProcessImport;
 import org.openlca.io.ilcd.input.SourceImport;
 import org.openlca.io.ilcd.input.SystemImport;
 import org.openlca.io.ilcd.input.UnitGroupImport;
+import org.openlca.io.maps.FlowMapEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -64,6 +63,7 @@ public class ILCDImport implements FileImport {
 			tryImportFlows();
 		tryImportProcesses();
 		tryImportMethods();
+		tryImportModels();
 		tryCloseStore();
 	}
 
@@ -79,18 +79,16 @@ public class ILCDImport implements FileImport {
 		if (canceled)
 			return;
 		try {
-			importContacts();
+			Iterator<Contact> it = config.store.iterator(Contact.class);
+			while (it.hasNext() && !canceled) {
+				Contact contact = it.next();
+				if (contact == null)
+					continue;
+				ContactImport contactImport = new ContactImport(config);
+				contactImport.run(contact);
+			}
 		} catch (Exception e) {
 			log.error("Contact import failed", e);
-		}
-	}
-
-	private void importContacts() throws Exception {
-		Iterator<Contact> it = config.store.iterator(Contact.class);
-		while (it.hasNext() && !canceled) {
-			Contact contact = it.next();
-			ContactImport contactImport = new ContactImport(config);
-			contactImport.run(contact);
 		}
 	}
 
@@ -101,8 +99,9 @@ public class ILCDImport implements FileImport {
 			Iterator<Source> it = config.store.iterator(Source.class);
 			while (it.hasNext() && !canceled) {
 				Source source = it.next();
-				fireEvent(new SourceBag(source, config.ilcdConfig)
-						.getShortName());
+				if (source == null)
+					continue;
+				fireEvent(source);
 				SourceImport sourceImport = new SourceImport(config);
 				sourceImport.run(source);
 			}
@@ -118,7 +117,9 @@ public class ILCDImport implements FileImport {
 			Iterator<UnitGroup> it = config.store.iterator(UnitGroup.class);
 			while (it.hasNext() && !canceled) {
 				UnitGroup group = it.next();
-				fireEvent(new UnitGroupBag(group, config.ilcdConfig).getName());
+				if (group == null)
+					continue;
+				fireEvent(group);
 				UnitGroupImport groupImport = new UnitGroupImport(config);
 				groupImport.run(group);
 			}
@@ -135,8 +136,9 @@ public class ILCDImport implements FileImport {
 					.iterator(FlowProperty.class);
 			while (it.hasNext() && !canceled) {
 				FlowProperty property = it.next();
-				fireEvent(new FlowPropertyBag(property, config.ilcdConfig)
-						.getName());
+				if (property == null)
+					continue;
+				fireEvent(property);
 				FlowPropertyImport propertyImport = new FlowPropertyImport(
 						config);
 				propertyImport.run(property);
@@ -153,7 +155,8 @@ public class ILCDImport implements FileImport {
 			Iterator<Flow> it = config.store.iterator(Flow.class);
 			while (it.hasNext() && !canceled) {
 				Flow flow = it.next();
-				fireEvent(new FlowBag(flow, config.ilcdConfig).getName());
+				if (flow == null || isMapped(flow))
+					continue;
 				FlowImport flowImport = new FlowImport(config);
 				flowImport.run(flow);
 			}
@@ -162,29 +165,44 @@ public class ILCDImport implements FileImport {
 		}
 	}
 
+	private boolean isMapped(Flow flow) {
+		if (flow == null)
+			return false;
+		String uuid = flow.getUUID();
+		FlowMapEntry me = config.flowMap.getEntry(uuid);
+		if (me == null)
+			return false;
+		FlowDao dao = new FlowDao(config.db);
+		// TODO: we should cache the flow for later but
+		// we cannot do this currently: see ExchangeFlow
+		return dao.getForRefId(me.openlcaFlowKey) != null;
+	}
+
+	public void importProcess(String id) throws Exception {
+		Process p = config.store.get(Process.class, id);
+		if (p == null)
+			throw new Exception("A process uuid=" + id
+					+ " could not be found");
+		ProcessImport imp = new ProcessImport(config);
+		fireEvent(p);
+		imp.run(p);
+	}
+
 	private void tryImportProcesses() {
 		if (canceled)
 			return;
 		try {
-			importProcesses();
+			Iterator<Process> it = config.store.iterator(Process.class);
+			ProcessImport imp = new ProcessImport(config);
+			while (it.hasNext() && !canceled) {
+				Process p = it.next();
+				if (p == null)
+					continue;
+				fireEvent(p);
+				imp.run(p);
+			}
 		} catch (Exception e) {
 			log.error("Process import failed", e);
-		}
-	}
-
-	private void importProcesses() throws Exception {
-		Iterator<Process> it = config.store.iterator(Process.class);
-		ProcessImport processImport = new ProcessImport(config);
-		while (it.hasNext() && !canceled) {
-			Process process = it.next();
-			ProcessBag bag = new ProcessBag(process, config.ilcdConfig);
-			fireEvent(bag.getName());
-			if (bag.hasProductModel()) {
-				SystemImport systemImport = new SystemImport(config);
-				systemImport.run(process);
-			} else {
-				processImport.run(process);
-			}
 		}
 	}
 
@@ -195,8 +213,9 @@ public class ILCDImport implements FileImport {
 			Iterator<LCIAMethod> it = config.store.iterator(LCIAMethod.class);
 			while (it.hasNext() && !canceled) {
 				LCIAMethod method = it.next();
-				MethodBag bag = new MethodBag(method);
-				fireEvent(bag.getImpactIndicator());
+				if (method == null)
+					continue;
+				fireEvent(method);
 				MethodImport methodImport = new MethodImport(config);
 				methodImport.run(method);
 			}
@@ -205,11 +224,34 @@ public class ILCDImport implements FileImport {
 		}
 	}
 
-	private void fireEvent(String dataSet) {
-		log.trace("import data set {}", dataSet);
+	private void tryImportModels() {
+		if (canceled)
+			return;
+		try {
+			Iterator<Model> it = config.store.iterator(Model.class);
+			while (it.hasNext() && !canceled) {
+				Model m = it.next();
+				if (m == null)
+					continue;
+				fireEvent(m);
+				SystemImport si = new SystemImport(config);
+				si.run(m);
+			}
+		} catch (Exception e) {
+			log.error("Product model import failed", e);
+		}
+	}
+
+	private void fireEvent(IDataSet ds) {
+		if (ds == null)
+			return;
+		String name = LangString.getFirst(ds.getName(), config.langs);
+		String info = ds.getDataSetType().toString() + " " + name + " "
+				+ ds.getUUID();
+		log.trace("import {}", info);
 		if (eventBus == null)
 			return;
-		eventBus.post(new ImportEvent(dataSet));
+		eventBus.post(new ImportEvent(info));
 	}
 
 }

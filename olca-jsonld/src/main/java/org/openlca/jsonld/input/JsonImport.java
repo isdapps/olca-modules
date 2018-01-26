@@ -1,7 +1,10 @@
 package org.openlca.jsonld.input;
 
+import java.util.function.Consumer;
+
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.model.ModelType;
+import org.openlca.core.model.RootEntity;
 import org.openlca.jsonld.EntityStore;
 import org.openlca.jsonld.Schema;
 import org.openlca.jsonld.Schema.UnsupportedSchemaException;
@@ -13,6 +16,7 @@ public class JsonImport implements Runnable {
 	private IDatabase database;
 	private EntityStore store;
 	private UpdateMode updateMode = UpdateMode.NEVER;
+	private Consumer<RootEntity> callback;
 
 	public JsonImport(EntityStore store, IDatabase db) {
 		this.store = store;
@@ -23,15 +27,77 @@ public class JsonImport implements Runnable {
 		this.updateMode = updateMode;
 	}
 
+	public void setCallback(Consumer<RootEntity> callback) {
+		this.callback = callback;
+	}
+
+	public void run(ModelType type, String id) {
+		checkSchemaSupported();
+		if (type == null || id == null)
+			return;
+		ImportConfig conf = ImportConfig.create(
+				new Db(database), store, updateMode, callback);
+		switch (type) {
+		case CATEGORY:
+			CategoryImport.run(id, conf);
+			break;
+		case DQ_SYSTEM:
+			DQSystemImport.run(id, conf);
+			break;
+		case LOCATION:
+			LocationImport.run(id, conf);
+			break;
+		case ACTOR:
+			ActorImport.run(id, conf);
+			break;
+		case SOURCE:
+			SourceImport.run(id, conf);
+			break;
+		case PARAMETER:
+			ParameterImport.run(id, conf);
+			break;
+		case UNIT_GROUP:
+			UnitGroupImport.run(id, conf);
+			break;
+		case FLOW_PROPERTY:
+			FlowPropertyImport.run(id, conf);
+			break;
+		case CURRENCY:
+			CurrencyImport.run(id, conf);
+			break;
+		case FLOW:
+			FlowImport.run(id, conf);
+			break;
+		case IMPACT_METHOD:
+			ImpactMethodImport.run(id, conf);
+			break;
+		case SOCIAL_INDICATOR:
+			SocialIndicatorImport.run(id, conf);
+			break;
+		case PROCESS:
+			ProcessImport.run(id, conf);
+			break;
+		case PRODUCT_SYSTEM:
+			ProductSystemImport.run(id, conf);
+			break;
+		case PROJECT:
+			ProjectImport.run(id, conf);
+			break;
+		default:
+			break;
+		}
+	}
+
 	@Override
 	public void run() {
 		checkSchemaSupported();
-		ImportConfig conf = ImportConfig.create(new Db(database), store,
-				updateMode);
-		for (String locId : store.getRefIds(ModelType.LOCATION))
-			LocationImport.run(locId, conf);
+		ImportConfig conf = ImportConfig.create(new Db(database), store, updateMode, callback);
 		for (String catId : store.getRefIds(ModelType.CATEGORY))
 			CategoryImport.run(catId, conf);
+		for (String sysId : store.getRefIds(ModelType.DQ_SYSTEM))
+			DQSystemImport.run(sysId, conf);
+		for (String locId : store.getRefIds(ModelType.LOCATION))
+			LocationImport.run(locId, conf);
 		for (String actorId : store.getRefIds(ModelType.ACTOR))
 			ActorImport.run(actorId, conf);
 		for (String sourceId : store.getRefIds(ModelType.SOURCE))

@@ -1,61 +1,61 @@
 package org.openlca.io.ilcd.output;
 
 import org.openlca.core.model.Actor;
+import org.openlca.core.model.CategorizedEntity;
 import org.openlca.core.model.Flow;
 import org.openlca.core.model.FlowProperty;
 import org.openlca.core.model.Process;
-import org.openlca.core.model.CategorizedEntity;
 import org.openlca.core.model.Source;
 import org.openlca.core.model.UnitGroup;
-import org.openlca.ilcd.commons.DataSetReference;
 import org.openlca.ilcd.commons.DataSetType;
-import org.openlca.ilcd.util.LangString;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.commons.Ref;
 
 class DataSetRef {
 
 	private DataSetRef() {
 	}
 
-	public static DataSetReference makeRef(CategorizedEntity model,
+	public static Ref makeRef(CategorizedEntity model,
 			ExportConfig config) {
 		if (model == null) {
-			return new DataSetReference();
+			return new Ref();
 		}
-		DataSetReference ref = new DataSetReference();
-		ref.setVersion("01.00.000");
-		ref.setUuid(model.getRefId());
+		Ref ref = new Ref();
+		ref.version = "01.00.000";
+		ref.uuid = model.getRefId();
 		setUriAndType(model, ref);
 		if (model.getName() != null) {
-			LangString.addShortText(ref.getShortDescription(), model.getName(),
-					config.ilcdConfig);
+			LangString.set(ref.name, model.getName(),
+					config.lang);
 		}
 		return ref;
 	}
 
 	private static void setUriAndType(CategorizedEntity iModel,
-			DataSetReference ref) {
+			Ref ref) {
 		String uri = "../";
 		if (iModel instanceof Actor) {
-			ref.setType(DataSetType.CONTACT_DATA_SET);
+			ref.type = DataSetType.CONTACT;
 			uri += "contacts/";
 		} else if (iModel instanceof Source) {
-			ref.setType(DataSetType.SOURCE_DATA_SET);
+			ref.type = DataSetType.SOURCE;
 			uri += "sources/";
 		} else if (iModel instanceof UnitGroup) {
-			ref.setType(DataSetType.UNIT_GROUP_DATA_SET);
+			ref.type = DataSetType.UNIT_GROUP;
 			uri += "unitgroups/";
 		} else if (iModel instanceof FlowProperty) {
-			ref.setType(DataSetType.FLOW_PROPERTY_DATA_SET);
+			ref.type = DataSetType.FLOW_PROPERTY;
 			uri += "flowproperties/";
 		} else if (iModel instanceof Flow) {
-			ref.setType(DataSetType.FLOW_DATA_SET);
+			ref.type = DataSetType.FLOW;
 			uri += "flows/";
 		} else if (iModel instanceof Process) {
-			ref.setType(DataSetType.PROCESS_DATA_SET);
+			ref.type = DataSetType.PROCESS;
 			uri += "processes/";
 		}
 		uri += iModel.getRefId();
-		ref.setUri(uri);
+		ref.uri = uri;
 	}
 
 }

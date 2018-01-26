@@ -88,9 +88,9 @@ public class BaseDaoTest {
 	// @Theory
 	private <T extends AbstractEntity> void testCrud(Class<T> clazz)
 			throws Exception {
-		log.info("run base dao test with {}", clazz);
+		log.trace("run base dao test with {}", clazz);
 		T instance = clazz.newInstance();
-		BaseDao<T> dao = new BaseDao<>(clazz, Tests.getDb());
+		BaseDao<T> dao = Daos.base(Tests.getDb(), clazz);
 		dao.insert(instance);
 		testUsage(instance);
 		dao.update(instance);
@@ -102,7 +102,7 @@ public class BaseDaoTest {
 	}
 
 	private <T extends AbstractEntity> void testUsage(T instance) {
-		log.info("test simple usage tests with {}", instance);
+		log.trace("test simple usage tests with {}", instance);
 		Class<?> clazz = instance.getClass();
 		if (!CategorizedEntity.class.isAssignableFrom(clazz))
 			return;

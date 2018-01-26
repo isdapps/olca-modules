@@ -1,8 +1,11 @@
 package org.openlca.core.database;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+
 import java.util.List;
 import java.util.UUID;
-import com.google.common.base.Optional;
+
 import org.junit.Assert;
 import org.junit.Test;
 import org.openlca.core.ListUtils;
@@ -24,6 +27,8 @@ import org.openlca.core.model.descriptors.BaseDescriptor;
 import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.common.base.Optional;
 
 public class CategorizedEntityDaoTest {
 
@@ -47,12 +52,20 @@ public class CategorizedEntityDaoTest {
 
 	private <T extends CategorizedEntity, V extends CategorizedDescriptor> void run(
 			Class<T> clazz, CategorizedEntityDao<T, V> dao) throws Exception {
-		log.info("run category entity tests for {}", clazz);
+		log.trace("run category entity tests for {}", clazz);
 		T instance = makeNew(clazz);
 		dao.insert(instance);
 		testFindForNullCategory(dao, instance);
 		Category category = addCategory(clazz, dao, instance);
 		testGetDescriptorsForCategory(dao, instance, category);
+		testGetForRefId(dao, instance);
+	}
+
+	private <T extends CategorizedEntity> void testGetForRefId(
+			CategorizedEntityDao<T, ?> dao, T instance) {
+		T clone = dao.getForRefId(instance.getRefId());
+		assertEquals(instance, clone);
+		assertNull(dao.getForRefId(UUID.randomUUID().toString()));
 	}
 
 	private <T extends CategorizedEntity, V extends CategorizedDescriptor> void testFindForNullCategory(
@@ -70,8 +83,7 @@ public class CategorizedEntityDaoTest {
 		category.setRefId(UUID.randomUUID().toString());
 		category.setName("test_category");
 		category.setModelType(ModelType.forModelClass(clazz));
-		BaseDao<Category> catDao = Tests.getDb().createDao(
-				Category.class);
+		CategoryDao catDao = new CategoryDao(Tests.getDb());
 		catDao.insert(category);
 		instance.setCategory(category);
 		dao.update(instance);
@@ -85,8 +97,7 @@ public class CategorizedEntityDaoTest {
 		BaseDescriptor descriptor = ListUtils.findDescriptor(instance.getId(),
 				descriptors);
 		Assert.assertNotNull(descriptor);
-		Tests.getDb().createDao(Category.class)
-				.delete(category);
+		new CategoryDao(Tests.getDb()).delete(category);
 	}
 
 	private <T extends CategorizedEntity> T makeNew(Class<T> clazz)

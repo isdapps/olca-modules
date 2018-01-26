@@ -7,23 +7,22 @@ import java.util.List;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openlca.ilcd.commons.Class;
-import org.openlca.ilcd.commons.ClassificationInformation;
-import org.openlca.ilcd.sources.AdministrativeInformation;
-import org.openlca.ilcd.sources.DataEntry;
-import org.openlca.ilcd.sources.DataSetInformation;
-import org.openlca.ilcd.sources.DigitalFileReference;
-import org.openlca.ilcd.sources.Publication;
+import org.openlca.ilcd.commons.Category;
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.sources.AdminInfo;
+import org.openlca.ilcd.sources.DataSetInfo;
+import org.openlca.ilcd.sources.FileRef;
 import org.openlca.ilcd.sources.Source;
 
 public class SourceBag implements IBag<Source> {
 
 	private Source source;
-	private IlcdConfig config;
+	private String[] langs;
 
-	public SourceBag(Source source, IlcdConfig config) {
+	public SourceBag(Source source, String... langs) {
 		this.source = source;
-		this.config = config;
+		this.langs = langs;
 	}
 
 	@Override
@@ -33,85 +32,69 @@ public class SourceBag implements IBag<Source> {
 
 	@Override
 	public String getId() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null)
-			return info.getUUID();
-		return null;
+		return source == null ? null : source.getUUID();
 	}
 
 	public String getShortName() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getShortName(), config);
+			return LangString.getFirst(info.name, langs);
 		return null;
 	}
 
 	public String getComment() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getSourceDescriptionOrComment(), config);
+			return LangString.getFirst(info.description, langs);
 		return null;
 	}
 
 	public String getSourceCitation() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return info.getSourceCitation();
+			return info.citation;
 		return null;
 	}
 
-	public List<Class> getSortedClasses() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null) {
-			ClassificationInformation classInfo = info
-					.getClassificationInformation();
-			return ClassList.sortedList(classInfo);
-		}
-		return Collections.emptyList();
+	public List<Category> getSortedClasses() {
+		return ClassList.sortedList(source);
 	}
 
 	public List<String> getExternalFileURIs() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info == null)
 			return Collections.emptyList();
-		List<DigitalFileReference> refs = info.getReferenceToDigitalFile();
+		List<FileRef> refs = info.files;
 		List<String> uris = new ArrayList<>();
-		for (DigitalFileReference ref : refs) {
-			if (ref.getUri() != null)
-				uris.add(ref.getUri());
+		for (FileRef ref : refs) {
+			if (ref.uri != null)
+				uris.add(ref.uri);
 		}
 		return uris;
 	}
 
-	private DataSetInformation getDataSetInformation() {
-		if (source.getSourceInformation() != null)
-			return source.getSourceInformation().getDataSetInformation();
+	private DataSetInfo getDataSetInformation() {
+		if (source.sourceInfo != null)
+			return source.sourceInfo.dataSetInfo;
 		return null;
 	}
 
 	public String getVersion() {
 		if (source == null)
 			return null;
-		AdministrativeInformation info = source.getAdministrativeInformation();
-		if (info == null)
-			return null;
-		Publication pub = info.getPublicationAndOwnership();
-		if (pub == null)
-			return null;
-		else
-			return pub.getDataSetVersion();
+		return source.getVersion();
 	}
 
 	public Date getTimeStamp() {
 		if (source == null)
 			return null;
-		AdministrativeInformation info = source.getAdministrativeInformation();
+		AdminInfo info = source.adminInfo;
 		if (info == null)
 			return null;
-		DataEntry entry = info.getDataEntryBy();
+		DataEntry entry = info.dataEntry;
 		if (entry == null)
 			return null;
-		XMLGregorianCalendar cal = entry.getTimeStamp();
+		XMLGregorianCalendar cal = entry.timeStamp;
 		if (cal == null)
 			return null;
 		else

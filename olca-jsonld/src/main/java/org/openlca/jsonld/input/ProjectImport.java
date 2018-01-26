@@ -50,7 +50,7 @@ class ProjectImport extends BaseImport<Project> {
 			return;
 		p.setImpactMethodId(method.getId());
 		String nwSetRefId = In.getRefId(json, "nwSet");
-		for (NwSet set : method.getNwSets())
+		for (NwSet set : method.nwSets)
 			if (set.getRefId().equals(nwSetRefId)) {
 				p.setNwSetId(set.getId());
 				break;
@@ -95,7 +95,7 @@ class ProjectImport extends BaseImport<Project> {
 			ProductSystem system) {
 		if (system.getReferenceExchange() == null)
 			return null;
-		Flow product = system.getReferenceExchange().getFlow();
+		Flow product = system.getReferenceExchange().flow;
 		for (FlowPropertyFactor factor : product.getFlowPropertyFactors())
 			if (factor.getFlowProperty().getRefId().equals(propRefId))
 				return factor;

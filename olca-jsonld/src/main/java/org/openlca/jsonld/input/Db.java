@@ -6,6 +6,7 @@ import java.util.Map;
 import org.openlca.core.database.ActorDao;
 import org.openlca.core.database.CategoryDao;
 import org.openlca.core.database.CurrencyDao;
+import org.openlca.core.database.DQSystemDao;
 import org.openlca.core.database.FlowDao;
 import org.openlca.core.database.FlowPropertyDao;
 import org.openlca.core.database.IDatabase;
@@ -18,10 +19,12 @@ import org.openlca.core.database.ProjectDao;
 import org.openlca.core.database.RootEntityDao;
 import org.openlca.core.database.SocialIndicatorDao;
 import org.openlca.core.database.SourceDao;
+import org.openlca.core.database.UnitDao;
 import org.openlca.core.database.UnitGroupDao;
 import org.openlca.core.model.Actor;
 import org.openlca.core.model.Category;
 import org.openlca.core.model.Currency;
+import org.openlca.core.model.DQSystem;
 import org.openlca.core.model.Flow;
 import org.openlca.core.model.FlowProperty;
 import org.openlca.core.model.ImpactMethod;
@@ -35,7 +38,6 @@ import org.openlca.core.model.SocialIndicator;
 import org.openlca.core.model.Source;
 import org.openlca.core.model.Unit;
 import org.openlca.core.model.UnitGroup;
-import org.openlca.core.model.descriptors.BaseDescriptor;
 
 class Db {
 
@@ -45,6 +47,7 @@ class Db {
 	private Map<String, Long> flowPropertyIds = new HashMap<>();
 	private Map<String, Long> flowIds = new HashMap<>();
 	private Map<String, Long> locationIds = new HashMap<>();
+	private Map<String, Long> dqSystemIds = new HashMap<>();
 	private Map<String, Long> methodIds = new HashMap<>();
 	private Map<String, Long> actorIds = new HashMap<>();
 	private Map<String, Long> sourceIds = new HashMap<>();
@@ -54,7 +57,8 @@ class Db {
 	private Map<String, Long> currencyIds = new HashMap<>();
 	private Map<String, Long> systemIds = new HashMap<>();
 	private Map<String, Long> projectIds = new HashMap<>();
-
+	public Map<String, String> categoryRefIdMapping = new HashMap<String, String>();
+	
 	private IDatabase db;
 
 	public Db(IDatabase db) {
@@ -71,6 +75,14 @@ class Db {
 
 	public Location put(Location loc) {
 		return put(new LocationDao(db), loc, locationIds);
+	}
+
+	public DQSystem getDqSystem(String refId) {
+		return get(new DQSystemDao(db), refId, dqSystemIds);
+	}
+
+	public DQSystem put(DQSystem sys) {
+		return put(new DQSystemDao(db), sys, dqSystemIds);
 	}
 
 	public Category getCategory(String refId) {
@@ -129,8 +141,7 @@ class Db {
 	}
 
 	public Unit getUnit(String refId) {
-		RootEntityDao<Unit, BaseDescriptor> dao = new RootEntityDao<>(
-				Unit.class, BaseDescriptor.class, db);
+		UnitDao dao = new UnitDao(db);
 		return get(dao, refId, unitIds);
 	}
 

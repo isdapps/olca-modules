@@ -7,19 +7,22 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
+import org.openlca.core.matrix.format.IMatrix;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
+
 /**
  * Sorts a *quadratic* matrix (the technology matrix in openLCA) so that rows
  * with more entries are located at the bottom of the matrix.
  */
 public class MatrixRowSorter {
 
-	private IMatrixFactory<?> factory;
+	private IMatrixSolver solver;
 	private IMatrix original;
 	private TIntIntHashMap indexMap;
 
-	public MatrixRowSorter(IMatrix original, IMatrixFactory<?> factory) {
+	public MatrixRowSorter(IMatrix original, IMatrixSolver solver) {
 		this.original = original;
-		this.factory = factory;
+		this.solver = solver;
 	}
 
 	public IMatrix run() {
@@ -31,12 +34,12 @@ public class MatrixRowSorter {
 
 	private List<Row> collectRows() {
 		List<Row> rows = new ArrayList<>();
-		for (int rowIdx = 0; rowIdx < original.getRowDimension(); rowIdx++) {
+		for (int rowIdx = 0; rowIdx < original.rows(); rowIdx++) {
 			Row row = new Row();
 			row.idx = rowIdx;
 			rows.add(row);
-			for (int col = 0; col < original.getColumnDimension(); col++) {
-				double val = original.getEntry(rowIdx, col);
+			for (int col = 0; col < original.columns(); col++) {
+				double val = original.get(rowIdx, col);
 				if (val != 0)
 					row.entries++;
 			}
@@ -55,16 +58,16 @@ public class MatrixRowSorter {
 	}
 
 	private IMatrix createSwappedMatrix() {
-		IMatrix swapped = factory.create(original.getRowDimension(),
-				original.getRowDimension());
-		for (int r = 0; r < original.getRowDimension(); r++) {
-			for (int c = 0; c < original.getColumnDimension(); c++) {
-				double val = original.getEntry(r, c);
+		IMatrix swapped = solver.matrix(original.rows(),
+				original.rows());
+		for (int r = 0; r < original.rows(); r++) {
+			for (int c = 0; c < original.columns(); c++) {
+				double val = original.get(r, c);
 				if (val == 0)
 					continue;
 				int newRow = indexMap.get(r);
 				int newCol = indexMap.get(c);
-				swapped.setEntry(newRow, newCol, val);
+				swapped.set(newRow, newCol, val);
 			}
 		}
 		return swapped;

@@ -9,7 +9,7 @@ import javax.persistence.EntityManagerFactory;
 
 
 /*import org.eclipse.persistence.jpa.PersistenceProvider;*/
-import org.openlca.core.database.BaseDao;
+//import org.openlca.core.database.BaseDao;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.Notifiable;
 import org.slf4j.Logger;
@@ -92,10 +92,6 @@ public class GrailsDatabase extends Notifiable implements IDatabase {
 		}
 	}
 
-	@Override
-	public <T> BaseDao<T> createDao(Class<T> clazz) {
-		return new BaseDao(clazz, this);
-	}
 
 	public String getName() {
 		if (url == null)

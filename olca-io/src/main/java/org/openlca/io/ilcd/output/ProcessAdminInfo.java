@@ -11,13 +11,13 @@ import org.openlca.core.model.ProcessDocumentation;
 import org.openlca.core.model.Source;
 import org.openlca.core.model.Version;
 import org.openlca.ilcd.commons.CommissionerAndGoal;
-import org.openlca.ilcd.commons.DataSetReference;
-import org.openlca.ilcd.processes.AdministrativeInformation;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.commons.Ref;
+import org.openlca.ilcd.processes.AdminInfo;
 import org.openlca.ilcd.processes.DataEntry;
 import org.openlca.ilcd.processes.DataGenerator;
 import org.openlca.ilcd.processes.Publication;
-import org.openlca.ilcd.util.LangString;
-import org.openlca.ilcd.util.Reference;
+import org.openlca.ilcd.util.Refs;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,16 +28,16 @@ class ProcessAdminInfo {
 	private final ExportConfig config;
 	private Process process;
 	private ProcessDocumentation documentation;
-	private AdministrativeInformation iAdminInfo;
+	private AdminInfo iAdminInfo;
 
 	ProcessAdminInfo(ExportConfig config) {
 		this.config = config;
 	}
 
-	AdministrativeInformation create(Process process) {
+	AdminInfo create(Process process) {
 		this.process = process;
 		this.documentation = process.getDocumentation();
-		iAdminInfo = new AdministrativeInformation();
+		iAdminInfo = new AdminInfo();
 		createDataGenerator();
 		createDataEntry();
 		createPublication();
@@ -47,15 +47,14 @@ class ProcessAdminInfo {
 
 	private void createDataEntry() {
 		DataEntry dataEntry = new DataEntry();
-		iAdminInfo.setDataEntry(dataEntry);
-		dataEntry.setTimeStamp(toXmlCalender(new Date()));
-		dataEntry.getReferenceToDataSetFormat().add(
-				Reference.forIlcdFormat(config.ilcdConfig));
+		iAdminInfo.dataEntry = dataEntry;
+		dataEntry.timeStamp = toXmlCalender(new Date());
+		dataEntry.formats.add(Refs.ilcd());
 		if (documentation.getDataDocumentor() != null) {
-			DataSetReference ref = ExportDispatch.forwardExportCheck(
+			Ref ref = ExportDispatch.forwardExportCheck(
 					documentation.getDataDocumentor(), config);
 			if (ref != null) {
-				dataEntry.setReferenceToPersonOrEntityEnteringTheData(ref);
+				dataEntry.documentor = ref;
 			}
 		}
 	}
@@ -63,12 +62,11 @@ class ProcessAdminInfo {
 	private void createDataGenerator() {
 		if (documentation.getDataGenerator() != null) {
 			DataGenerator generator = new DataGenerator();
-			iAdminInfo.setDataGenerator(generator);
-			DataSetReference ref = ExportDispatch.forwardExportCheck(
+			iAdminInfo.dataGenerator = generator;
+			Ref ref = ExportDispatch.forwardExportCheck(
 					documentation.getDataGenerator(), config);
 			if (ref != null)
-				generator.getReferenceToPersonOrEntityGeneratingTheDataSet()
-						.add(ref);
+				generator.contacts.add(ref);
 		}
 	}
 
@@ -88,28 +86,28 @@ class ProcessAdminInfo {
 
 	private void createPublication() {
 		Publication publication = new Publication();
-		iAdminInfo.setPublication(publication);
+		iAdminInfo.publication = publication;
 		if (process.getLastChange() != 0)
-			publication.setDateOfLastRevision(toXmlCalender(new Date(process
-					.getLastChange())));
+			publication.lastRevision = toXmlCalender(new Date(process
+					.getLastChange()));
 		String version = Version.asString(process.getVersion());
-		publication.setDataSetVersion(version);
-		publication.setCopyright(documentation.isCopyright());
+		publication.version = version;
+		publication.copyright = documentation.isCopyright();
 		mapDataSetOwner(publication);
 		if (!Strings.nullOrEmpty(documentation.getRestrictions())) {
-			publication.getAccessRestrictions().add(
-					LangString.freeText(documentation.getRestrictions(),
-							config.ilcdConfig));
+			publication.accessRestrictions.add(
+					LangString.of(documentation.getRestrictions(),
+							config.lang));
 		}
 		mapPublicationSource(publication);
 	}
 
 	private void mapDataSetOwner(Publication publication) {
 		if (documentation.getDataSetOwner() != null) {
-			DataSetReference ref = ExportDispatch.forwardExportCheck(
+			Ref ref = ExportDispatch.forwardExportCheck(
 					documentation.getDataSetOwner(), config);
 			if (ref != null) {
-				publication.setReferenceToOwnershipOfDataSet(ref);
+				publication.owner = ref;
 			}
 		}
 	}
@@ -118,10 +116,10 @@ class ProcessAdminInfo {
 		Source source = documentation.getPublication();
 		if (source == null)
 			return;
-		DataSetReference ref = ExportDispatch
+		Ref ref = ExportDispatch
 				.forwardExportCheck(source, config);
 		if (ref != null)
-			publication.setReferenceToUnchangedRepublication(ref);
+			publication.republication = ref;
 	}
 
 	private void createCommissionerAndGoal() {
@@ -129,16 +127,16 @@ class ProcessAdminInfo {
 				&& Strings.nullOrEmpty(documentation.getProject()))
 			return;
 		CommissionerAndGoal comAndGoal = new CommissionerAndGoal();
-		iAdminInfo.setCommissionerAndGoal(comAndGoal);
+		iAdminInfo.commissionerAndGoal = comAndGoal;
 		if (!Strings.nullOrEmpty(documentation.getIntendedApplication())) {
-			comAndGoal.getIntendedApplications().add(
-					LangString.freeText(documentation.getIntendedApplication(),
-							config.ilcdConfig));
+			comAndGoal.intendedApplications.add(
+					LangString.of(documentation.getIntendedApplication(),
+							config.lang));
 		}
 		if (!Strings.nullOrEmpty(documentation.getProject())) {
-			comAndGoal.getProject().add(
-					LangString.label(documentation.getProject(),
-							config.ilcdConfig));
+			comAndGoal.project.add(
+					LangString.of(documentation.getProject(),
+							config.lang));
 		}
 	}
 

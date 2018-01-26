@@ -1,11 +1,10 @@
 package org.openlca.io.ilcd.input;
 
-import java.math.BigInteger;
 import java.util.Calendar;
 import java.util.Date;
 
 import org.openlca.core.model.ProcessDocumentation;
-import org.openlca.ilcd.util.LangString;
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.util.TimeExtension;
 
 /**
@@ -32,24 +31,24 @@ class ProcessTime {
 		TimeExtension extension = new TimeExtension(ilcdTime);
 		mapStartDate(extension, doc);
 		mapEndDate(extension, doc);
-		doc.setTime(LangString.get(ilcdTime.getDescription(), config.ilcdConfig));
+		doc.setTime(LangString.getFirst(ilcdTime.description, config.langs));
 	}
 
 	private void mapStartDate(TimeExtension extension, ProcessDocumentation doc) {
 		Date startDate = extension.getStartDate();
 		if (startDate == null)
-			startDate = date(ilcdTime.getReferenceYear());
+			startDate = date(ilcdTime.referenceYear);
 		doc.setValidFrom(startDate);
 	}
 
 	private void mapEndDate(TimeExtension extension, ProcessDocumentation doc) {
 		Date endDate = extension.getEndDate();
 		if (endDate == null)
-			endDate = date(ilcdTime.getValidUntil());
+			endDate = date(ilcdTime.validUntil);
 		doc.setValidUntil(endDate);
 	}
 
-	private Date date(BigInteger bigInt) {
+	private Date date(Integer bigInt) {
 		if (bigInt == null)
 			return null;
 		int year = bigInt.intValue();

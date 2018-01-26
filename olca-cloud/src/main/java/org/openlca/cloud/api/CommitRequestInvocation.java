@@ -1,6 +1,5 @@
 package org.openlca.cloud.api;
 
-import org.openlca.cloud.util.Strings;
 import org.openlca.cloud.util.Valid;
 import org.openlca.cloud.util.WebRequests;
 import org.openlca.cloud.util.WebRequests.Type;
@@ -34,12 +33,11 @@ class CommitRequestInvocation {
 	 */
 	public void execute() throws WebRequestException {
 		Valid.checkNotEmpty(baseUrl, "base url");
-		Valid.checkNotEmpty(sessionId, "session id");
 		Valid.checkNotEmpty(repositoryId, "repository id");
-		if (lastCommitId == null || lastCommitId.isEmpty())
-			lastCommitId = "null";
-		String url = Strings.concat(baseUrl, PATH, repositoryId, "/",
-				lastCommitId);
+		String url = baseUrl + PATH + repositoryId;
+		if (lastCommitId != null) {
+			url += "?lastCommitId=" + lastCommitId;
+		}
 		WebRequests.call(Type.GET, url, sessionId);
 	}
 

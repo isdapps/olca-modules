@@ -2,11 +2,11 @@
 package org.openlca.ilcd.processes;
 
 import java.io.Serializable;
-import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAnyAttribute;
@@ -14,306 +14,115 @@ import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
-import org.openlca.ilcd.commons.Label;
+
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.commons.Other;
 import org.openlca.ilcd.commons.UncertaintyDistribution;
+import org.openlca.ilcd.commons.annotations.Label;
 
-
-/**
- * <p>Java class for VariableParameterType complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
- * 
- * <pre>
- * &lt;complexType name="VariableParameterType">
- *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;sequence>
- *         &lt;element name="formula" type="{http://lca.jrc.it/ILCD/Common}MatR" minOccurs="0"/>
- *         &lt;element name="meanValue" type="{http://lca.jrc.it/ILCD/Common}Real" minOccurs="0"/>
- *         &lt;element name="minimumValue" type="{http://lca.jrc.it/ILCD/Common}Real" minOccurs="0"/>
- *         &lt;element name="maximumValue" type="{http://lca.jrc.it/ILCD/Common}Real" minOccurs="0"/>
- *         &lt;element name="uncertaintyDistributionType" type="{http://lca.jrc.it/ILCD/Common}UncertaintyDistributionTypeValues" minOccurs="0"/>
- *         &lt;element name="relativeStandardDeviation95In" type="{http://lca.jrc.it/ILCD/Common}Perc" minOccurs="0"/>
- *         &lt;element name="comment" type="{http://lca.jrc.it/ILCD/Common}StringMultiLang" maxOccurs="100" minOccurs="0"/>
- *         &lt;element ref="{http://lca.jrc.it/ILCD/Common}other" minOccurs="0"/>
- *       &lt;/sequence>
- *       &lt;attribute name="name" use="required" type="{http://lca.jrc.it/ILCD/Common}MatV" />
- *       &lt;anyAttribute processContents='lax' namespace='##other'/>
- *     &lt;/restriction>
- *   &lt;/complexContent>
- * &lt;/complexType>
- * </pre>
- * 
- * 
- */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "VariableParameterType", propOrder = {
-    "formula",
-    "meanValue",
-    "minimumValue",
-    "maximumValue",
-    "uncertaintyDistributionType",
-    "relativeStandardDeviation95In",
-    "comment",
-    "other"
+		"formula",
+		"mean",
+		"min",
+		"max",
+		"distribution",
+		"dispersion",
+		"comment",
+		"other"
 })
-public class Parameter
-    implements Serializable
-{
+public class Parameter implements Serializable {
 
-    private final static long serialVersionUID = 1L;
-    protected String formula;
-    protected Double meanValue;
-    protected Double minimumValue;
-    protected Double maximumValue;
-    protected UncertaintyDistribution uncertaintyDistributionType;
-    protected BigDecimal relativeStandardDeviation95In;
-    protected List<Label> comment;
-    @XmlElement(namespace = "http://lca.jrc.it/ILCD/Common")
-    protected Other other;
-    @XmlAttribute(name = "name", required = true)
-    protected String name;
-    @XmlAnyAttribute
-    private Map<QName, String> otherAttributes =  new HashMap<>();
+	private final static long serialVersionUID = 1L;
 
-    /**
-     * Gets the value of the formula property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getFormula() {
-        return formula;
-    }
+	/**
+	 * Mathematical expression that determines the value of a variable. [Note: A
+	 * parameter is defined by entering the value manually into the field "Mean
+	 * value" and this field can be left empty.]
+	 */
+	@XmlElement(name = "formula")
+	public String formula;
 
-    /**
-     * Sets the value of the formula property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setFormula(String value) {
-        this.formula = value;
-    }
+	/**
+	 * Parameter value entered by user OR in case a formula is given in the
+	 * "Formula" field, the result of the formula for the variable is displayed
+	 * here.
+	 */
+	@XmlElement(name = "meanValue")
+	public Double mean;
 
-    /**
-     * Gets the value of the meanValue property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Double }
-     *     
-     */
-    public Double getMeanValue() {
-        return meanValue;
-    }
+	/**
+	 * Minimum value permissible for this parameter. For variables this field is
+	 * empty.
+	 */
+	@XmlElement(name = "minimumValue")
+	public Double min;
 
-    /**
-     * Sets the value of the meanValue property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Double }
-     *     
-     */
-    public void setMeanValue(Double value) {
-        this.meanValue = value;
-    }
+	/**
+	 * Maximum value permissible for this parameter. For variables this field is
+	 * empty.
+	 */
+	@XmlElement(name = "maximumValue")
+	public Double max;
 
-    /**
-     * Gets the value of the minimumValue property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Double }
-     *     
-     */
-    public Double getMinimumValue() {
-        return minimumValue;
-    }
+	/**
+	 * Defines the kind of uncertainty distribution that is valid for this
+	 * particular object or parameter.
+	 */
+	@XmlElement(name = "uncertaintyDistributionType")
+	public UncertaintyDistribution distribution;
 
-    /**
-     * Sets the value of the minimumValue property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Double }
-     *     
-     */
-    public void setMinimumValue(Double value) {
-        this.minimumValue = value;
-    }
+	/**
+	 * The resulting overall uncertainty of the calculated variable value
+	 * considering uncertainty of measurements, modelling, appropriateness etc.
+	 * [Notes: For log-normal distribution the square of the geometric standard
+	 * deviation (SDg^2) is stated. Mean value times SDg^2 equals the 97.5%
+	 * value (= Maximum value), Mean value divided by SDg^2 equals the 2.5%
+	 * value (= Minimum value). For normal distribution the doubled standard
+	 * deviation value (2*SD) is entered. Mean value plus 2*SD equals 97.5%
+	 * value (= Maximum value), Mean value minus 2*SD equals 2.5% value (=
+	 * Minimum value). This data field remains empty when uniform or triangular
+	 * uncertainty distribution is applied.]
+	 */
+	@XmlElement(name = "relativeStandardDeviation95In")
+	public Double dispersion;
 
-    /**
-     * Gets the value of the maximumValue property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Double }
-     *     
-     */
-    public Double getMaximumValue() {
-        return maximumValue;
-    }
+	/**
+	 * Comment or description of variable or parameter. Typically including its
+	 * unit and default values, e.g. in the pattern &lt;[unit] description;
+	 * defaults; comments&gt;.
+	 */
+	@Label
+	@XmlElement(name = "comment")
+	public final List<LangString> comment = new ArrayList<>();
 
-    /**
-     * Sets the value of the maximumValue property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Double }
-     *     
-     */
-    public void setMaximumValue(Double value) {
-        this.maximumValue = value;
-    }
+	@XmlElement(namespace = "http://lca.jrc.it/ILCD/Common")
+	public Other other;
 
-    /**
-     * Gets the value of the uncertaintyDistributionType property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link UncertaintyDistribution }
-     *     
-     */
-    public UncertaintyDistribution getUncertaintyDistributionType() {
-        return uncertaintyDistributionType;
-    }
+	/**
+	 * Name of variable or parameter used as scaling factors for the "Mean
+	 * amount" of individual inputs or outputs of the data set.
+	 */
+	@XmlAttribute(name = "name", required = true)
+	public String name;
 
-    /**
-     * Sets the value of the uncertaintyDistributionType property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link UncertaintyDistribution }
-     *     
-     */
-    public void setUncertaintyDistributionType(UncertaintyDistribution value) {
-        this.uncertaintyDistributionType = value;
-    }
+	@XmlAnyAttribute
+	public final Map<QName, String> otherAttributes = new HashMap<>();
 
-    /**
-     * Gets the value of the relativeStandardDeviation95In property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link BigDecimal }
-     *     
-     */
-    public BigDecimal getRelativeStandardDeviation95In() {
-        return relativeStandardDeviation95In;
-    }
-
-    /**
-     * Sets the value of the relativeStandardDeviation95In property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link BigDecimal }
-     *     
-     */
-    public void setRelativeStandardDeviation95In(BigDecimal value) {
-        this.relativeStandardDeviation95In = value;
-    }
-
-    /**
-     * Gets the value of the comment property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the comment property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getComment().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Label }
-     * 
-     * 
-     */
-    public List<Label> getComment() {
-        if (comment == null) {
-            comment = new ArrayList<>();
-        }
-        return this.comment;
-    }
-
-    /**
-     * May contain arbitrary content.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Other }
-     *     
-     */
-    public Other getOther() {
-        return other;
-    }
-
-    /**
-     * Sets the value of the other property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Other }
-     *     
-     */
-    public void setOther(Other value) {
-        this.other = value;
-    }
-
-    /**
-     * Gets the value of the name property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link String }
-     *     
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * Sets the value of the name property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link String }
-     *     
-     */
-    public void setName(String value) {
-        this.name = value;
-    }
-
-    /**
-     * Gets a map that contains attributes that aren't bound to any typed property on this class.
-     * 
-     * <p>
-     * the map is keyed by the name of the attribute and 
-     * the value is the string value of the attribute.
-     * 
-     * the map returned by this method is live, and you can add new attribute
-     * by updating the map directly. Because of this design, there's no setter.
-     * 
-     * 
-     * @return
-     *     always non-null
-     */
-    public Map<QName, String> getOtherAttributes() {
-        return otherAttributes;
-    }
-
+	@Override
+	public Parameter clone() {
+		Parameter clone = new Parameter();
+		clone.formula = formula;
+		clone.mean = mean;
+		clone.min = min;
+		clone.max = max;
+		clone.distribution = distribution;
+		clone.dispersion = dispersion;
+		LangString.copy(comment, clone.comment);
+		if (other != null)
+			clone.other = other.clone();
+		clone.name = name;
+		clone.otherAttributes.putAll(otherAttributes);
+		return clone;
+	}
 }

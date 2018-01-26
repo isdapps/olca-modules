@@ -11,6 +11,10 @@ public final class ModelPath {
 		return "bin/" + ModelPath.get(type) + "/" + refId;
 	}
 
+	public static String get(ModelType type, String refId) {
+		return ModelPath.get(type) + "/" + refId + ".json";
+	}
+
 	public static String get(ModelType type) {
 		if (type == null)
 			return "";
@@ -49,6 +53,8 @@ public final class ModelPath {
 			return "units";
 		case UNIT_GROUP:
 			return "unit_groups";
+		case DQ_SYSTEM:
+			return "dq_systems";
 		default:
 			return "unknown";
 		}

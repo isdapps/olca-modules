@@ -3,8 +3,8 @@ package org.openlca.core.matrix;
 import gnu.trove.impl.Constants;
 import gnu.trove.map.hash.TIntObjectHashMap;
 
-import org.openlca.core.math.IMatrix;
-import org.openlca.core.math.IMatrixFactory;
+import org.openlca.core.matrix.format.IMatrix;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
 import org.openlca.expressions.FormulaInterpreter;
 
 /**
@@ -46,12 +46,12 @@ public class ImpactFactorMatrix {
 		return rowMap.get(col);
 	}
 
-	public <M extends IMatrix> M createRealMatrix(IMatrixFactory<M> factory) {
-		final M matrix = factory.create(rows, columns);
+	public IMatrix createRealMatrix(IMatrixSolver solver) {
+		IMatrix matrix = solver.matrix(rows, columns);
 		iterate(new Fn() {
 			@Override
 			public void apply(int row, int col, ImpactFactorCell cell) {
-				matrix.setEntry(row, col, cell.getMatrixValue());
+				matrix.set(row, col, cell.getMatrixValue());
 			}
 		});
 		return matrix;
@@ -70,7 +70,7 @@ public class ImpactFactorMatrix {
 		iterate(new Fn() {
 			@Override
 			public void apply(int row, int col, ImpactFactorCell cell) {
-				matrix.setEntry(row, col, cell.getMatrixValue());
+				matrix.set(row, col, cell.getMatrixValue());
 			}
 		});
 	}
@@ -79,7 +79,7 @@ public class ImpactFactorMatrix {
 		iterate(new Fn() {
 			@Override
 			public void apply(int row, int col, ImpactFactorCell cell) {
-				matrix.setEntry(row, col, cell.getNextSimulationValue());
+				matrix.set(row, col, cell.getNextSimulationValue());
 			}
 		});
 	}

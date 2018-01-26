@@ -8,6 +8,7 @@ import org.openlca.core.matrix.Inventory;
 import org.openlca.core.matrix.InventoryMatrix;
 import org.openlca.core.matrix.ParameterTable;
 import org.openlca.core.matrix.cache.MatrixCache;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
 import org.openlca.core.results.ContributionResult;
 import org.openlca.core.results.FullResult;
 import org.openlca.core.results.SimpleResult;
@@ -48,13 +49,13 @@ public class SystemCalculator {
 				setup, inventory);
 		FormulaInterpreter interpreter = parameterTable.createInterpreter();
 		InventoryMatrix inventoryMatrix = inventory.createMatrix(
-				solver.getMatrixFactory(), interpreter);
+				solver, interpreter);
 		LcaCalculator calculator = new LcaCalculator(solver, inventoryMatrix);
 		if (setup.impactMethod != null) {
 			ImpactTable impactTable = ImpactTable.build(matrixCache,
 					setup.impactMethod.getId(), inventory.flowIndex);
 			ImpactMatrix impactMatrix = impactTable.createMatrix(
-					solver.getMatrixFactory(), interpreter);
+					solver, interpreter);
 			calculator.setImpactMatrix(impactMatrix);
 		}
 		if (setup.withCosts) {

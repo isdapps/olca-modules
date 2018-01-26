@@ -2,6 +2,7 @@ package org.openlca.jsonld.input;
 
 import org.openlca.core.model.ImpactCategory;
 import org.openlca.core.model.ImpactMethod;
+import org.openlca.core.model.ImpactMethod.ParameterMean;
 import org.openlca.core.model.ModelType;
 import org.openlca.core.model.NwSet;
 import org.openlca.core.model.Parameter;
@@ -29,6 +30,7 @@ class ImpactMethodImport extends BaseImport<ImpactMethod> {
 		mapCategories(json, m);
 		mapNwSets(json, m);
 		mapParameters(json, m);
+		m.parameterMean = In.getEnum(json, "parameterMean", ParameterMean.class);
 		return conf.db.put(m);
 	}
 
@@ -40,11 +42,10 @@ class ImpactMethodImport extends BaseImport<ImpactMethod> {
 			if (!e.isJsonObject())
 				continue;
 			String catId = In.getString(e.getAsJsonObject(), "@id");
-			JsonObject catJson = conf.store.get(ModelType.IMPACT_CATEGORY,
-					catId);
+			JsonObject catJson = conf.store.get(ModelType.IMPACT_CATEGORY, catId);
 			ImpactCategory category = ImpactCategories.map(catJson, conf);
 			if (category != null)
-				m.getImpactCategories().add(category);
+				m.impactCategories.add(category);
 		}
 	}
 
@@ -57,9 +58,9 @@ class ImpactMethodImport extends BaseImport<ImpactMethod> {
 				continue;
 			String nwSetId = In.getString(e.getAsJsonObject(), "@id");
 			JsonObject nwSetJson = conf.store.get(ModelType.NW_SET, nwSetId);
-			NwSet set = NwSets.map(nwSetJson, m.getImpactCategories());
+			NwSet set = NwSets.map(nwSetJson, m.impactCategories);
 			if (set != null)
-				m.getNwSets().add(set);
+				m.nwSets.add(set);
 		}
 	}
 
@@ -75,7 +76,7 @@ class ImpactMethodImport extends BaseImport<ImpactMethod> {
 			ParameterImport pi = new ParameterImport(refId, conf);
 			Parameter parameter = new Parameter();
 			pi.mapFields(o, parameter);
-			method.getParameters().add(parameter);
+			method.parameters.add(parameter);
 		}
 	}
 }

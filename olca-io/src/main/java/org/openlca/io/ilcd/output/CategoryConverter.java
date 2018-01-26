@@ -1,23 +1,17 @@
 package org.openlca.io.ilcd.output;
 
-import java.math.BigInteger;
 import java.util.Stack;
 
 import org.openlca.core.model.Category;
-import org.openlca.ilcd.commons.Class;
 import org.openlca.ilcd.commons.Classification;
-import org.openlca.ilcd.commons.ClassificationInformation;
-import org.openlca.ilcd.commons.FlowCategorization;
+import org.openlca.ilcd.flows.Compartment;
+import org.openlca.ilcd.flows.CompartmentList;
 
 class CategoryConverter {
 
-	ClassificationInformation getClassificationInformation(Category category) {
-		ClassificationInformation info = new ClassificationInformation();
-		info.getClassifications().add(getClassification(category));
-		return info;
-	}
-
 	Classification getClassification(Category category) {
+		if (category == null)
+			return null;
 		Classification classification = new Classification();
 		if (category != null) {
 			Stack<Category> stack = fillStack(category);
@@ -26,8 +20,8 @@ class CategoryConverter {
 		return classification;
 	}
 
-	FlowCategorization getElementaryFlowCategory(Category category) {
-		FlowCategorization categorization = new FlowCategorization();
+	CompartmentList getElementaryFlowCategory(Category category) {
+		CompartmentList categorization = new CompartmentList();
 		if (category != null) {
 			Stack<Category> stack = fillStack(category);
 			makeElementaryFlowCategories(categorization, stack);
@@ -55,26 +49,25 @@ class CategoryConverter {
 		int level = 0;
 		while (!stack.isEmpty()) {
 			category = stack.pop();
-			org.openlca.ilcd.commons.Class clazz = new Class();
-			clazz.setClassId(category.getRefId());
-			clazz.setLevel(BigInteger.valueOf(level));
-			clazz.setValue(category.getName());
-			classification.getClasses().add(clazz);
+			org.openlca.ilcd.commons.Category clazz = new org.openlca.ilcd.commons.Category();
+			clazz.classId = category.getRefId();
+			clazz.level = level;
+			clazz.value = category.getName();
+			classification.categories.add(clazz);
 			level++;
 		}
 	}
 
-	private void makeElementaryFlowCategories(
-			FlowCategorization categorization, Stack<Category> stack) {
+	private void makeElementaryFlowCategories(CompartmentList list, Stack<Category> stack) {
 		Category category;
 		int level = 0;
 		while (!stack.isEmpty()) {
 			category = stack.pop();
-			org.openlca.ilcd.commons.Category ilcdCategory = new org.openlca.ilcd.commons.Category();
-			ilcdCategory.setCatId(category.getRefId());
-			ilcdCategory.setLevel(BigInteger.valueOf(level));
-			ilcdCategory.setValue(category.getName());
-			categorization.getCategories().add(ilcdCategory);
+			Compartment c = new Compartment();
+			list.compartments.add(c);
+			c.catId = category.getRefId();
+			c.level = level;
+			c.value = category.getName();
 			level++;
 		}
 	}

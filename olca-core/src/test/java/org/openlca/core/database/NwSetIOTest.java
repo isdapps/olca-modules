@@ -1,5 +1,7 @@
 package org.openlca.core.database;
 
+import java.util.List;
+
 import org.junit.After;
 import org.junit.Assert;
 import org.junit.Before;
@@ -11,8 +13,6 @@ import org.openlca.core.model.ImpactMethod;
 import org.openlca.core.model.NwFactor;
 import org.openlca.core.model.NwSet;
 import org.openlca.core.model.descriptors.NwSetDescriptor;
-
-import java.util.List;
 
 public class NwSetIOTest {
 
@@ -30,42 +30,41 @@ public class NwSetIOTest {
 		for (int i = 0; i < NWSET_COUNT; i++) {
 			NwSet set = new NwSet();
 			set.setName("nwset_" + i);
-			method.getNwSets().add(set);
+			method.nwSets.add(set);
 		}
 		for (int i = 0; i < CATEGORY_COUNT; i++) {
 			ImpactCategory category = new ImpactCategory();
 			category.setName("category_" + i);
-			method.getImpactCategories().add(category);
-			for (NwSet set : method.getNwSets()) {
+			method.impactCategories.add(category);
+			for (NwSet set : method.nwSets) {
 				NwFactor factor = new NwFactor();
 				factor.setWeightingFactor(FACTOR);
 				factor.setImpactCategory(category);
 				factor.setNormalisationFactor(FACTOR);
-				set.getFactors().add(factor);
+				set.factors.add(factor);
 			}
 		}
-		this.method = db.createDao(ImpactMethod.class).insert(method);
+		this.method = new ImpactMethodDao(db).insert(method);
 		Tests.emptyCache();
 	}
 
 	@After
 	public void tearDown() {
 		if (method != null)
-			db.createDao(ImpactMethod.class).delete(method);
+			new ImpactMethodDao(db).delete(method);
 	}
 
 	@Test
 	public void testModel() {
-		ImpactMethod method = db.createDao(ImpactMethod.class)
-				.getForId(this.method.getId());
-		Assert.assertEquals(CATEGORY_COUNT, method.getImpactCategories().size());
-		Assert.assertEquals(NWSET_COUNT, method.getNwSets().size());
-		for(NwSet nwSet : method.getNwSets()) {
-			Assert.assertEquals(CATEGORY_COUNT, nwSet.getFactors().size());
-			for(NwFactor f : nwSet.getFactors()) {
+		ImpactMethod method = new ImpactMethodDao(db).getForId(this.method.getId());
+		Assert.assertEquals(CATEGORY_COUNT, method.impactCategories.size());
+		Assert.assertEquals(NWSET_COUNT, method.nwSets.size());
+		for(NwSet nwSet : method.nwSets) {
+			Assert.assertEquals(CATEGORY_COUNT, nwSet.factors.size());
+			for(NwFactor f : nwSet.factors) {
 				Assert.assertEquals(f.getNormalisationFactor(), FACTOR, 1e-20);
 				Assert.assertEquals(f.getWeightingFactor(), FACTOR, 1e-20);
-				Assert.assertTrue(method.getImpactCategories().contains(
+				Assert.assertTrue(method.impactCategories.contains(
 						f.getImpactCategory()));
 			}
 		}
@@ -84,9 +83,9 @@ public class NwSetIOTest {
 
 	@Test
 	public void testNwSetTable() {
-		for(NwSet nwSet : method.getNwSets()) {
+		for(NwSet nwSet : method.nwSets) {
 			NwSetTable table = NwSetTable.build(db, nwSet.getId());
-			for(ImpactCategory impact : method.getImpactCategories()) {
+			for(ImpactCategory impact : method.impactCategories) {
 				Assert.assertEquals(FACTOR, table.getNormalisationFactor(
 						impact.getId()), 1e-20);
 				Assert.assertEquals(FACTOR, table.getWeightingFactor(

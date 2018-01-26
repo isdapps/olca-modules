@@ -13,11 +13,11 @@ import org.openlca.core.model.UnitGroup;
 import org.openlca.ecospold.IExchange;
 import org.openlca.ecospold.IReferenceFunction;
 import org.openlca.ecospold.io.DataSet;
-import org.openlca.util.KeyGen;
 import org.openlca.io.UnitMapping;
 import org.openlca.io.UnitMappingEntry;
 import org.openlca.io.maps.FlowMap;
 import org.openlca.io.maps.FlowMapEntry;
+import org.openlca.util.KeyGen;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -117,11 +117,11 @@ class FlowImport {
 		FlowMapEntry entry = flowMap.getEntry(genKey);
 		if (entry == null)
 			return null;
-		Flow flow = db.get(Flow.class, entry.getOpenlcaFlowKey());
+		Flow flow = db.get(Flow.class, entry.openlcaFlowKey);
 		if (flow == null)
 			return null;
 		FlowBucket bucket = new FlowBucket();
-		bucket.conversionFactor = entry.getConversionFactor();
+		bucket.conversionFactor = entry.conversionFactor;
 		bucket.flow = flow;
 		bucket.flowProperty = flow.getReferenceFactor();
 		Unit unit = getReferenceUnit(bucket.flowProperty);
@@ -201,9 +201,9 @@ class FlowImport {
 		UnitMappingEntry entry = unitMapping.getEntry(unit);
 		if (entry == null || !entry.isValid())
 			return null;
-		flow.setReferenceFlowProperty(entry.getFlowProperty());
+		flow.setReferenceFlowProperty(entry.flowProperty);
 		FlowPropertyFactor factor = new FlowPropertyFactor();
-		factor.setFlowProperty(entry.getFlowProperty());
+		factor.setFlowProperty(entry.flowProperty);
 		factor.setConversionFactor(1.0);
 		flow.getFlowPropertyFactors().add(factor);
 		db.put(flow, flowKey);
@@ -215,7 +215,7 @@ class FlowImport {
 		UnitMappingEntry mapEntry = unitMapping.getEntry(unit);
 		if (mapEntry == null || !mapEntry.isValid())
 			return null;
-		FlowPropertyFactor factor = flow.getFactor(mapEntry.getFlowProperty());
+		FlowPropertyFactor factor = flow.getFactor(mapEntry.flowProperty);
 		if (factor == null) {
 			log.error("The unit/property for flow {}/{} "
 					+ "changed in the database", flow, unit);
@@ -225,7 +225,7 @@ class FlowImport {
 		bucket.conversionFactor = 1.0;
 		bucket.flow = flow;
 		bucket.flowProperty = factor;
-		bucket.unit = mapEntry.getUnit();
+		bucket.unit = mapEntry.unit;
 		return bucket;
 	}
 

@@ -28,7 +28,7 @@ public class SourceImport {
 
 	public Source run(org.openlca.ilcd.sources.Source source)
 			throws ImportException {
-		this.ilcdSource = new SourceBag(source, config.ilcdConfig);
+		this.ilcdSource = new SourceBag(source, config.langs);
 		Source oSource = findExisting(ilcdSource.getId());
 		if (oSource != null)
 			return oSource;
@@ -40,7 +40,7 @@ public class SourceImport {
 		if (source != null)
 			return source;
 		org.openlca.ilcd.sources.Source iSource = tryGetSource(sourceId);
-		ilcdSource = new SourceBag(iSource, config.ilcdConfig);
+		ilcdSource = new SourceBag(iSource, config.langs);
 		return createNew();
 	}
 
@@ -132,7 +132,7 @@ public class SourceImport {
 
 	private void saveInDatabase() throws ImportException {
 		try {
-			config.db.createDao(Source.class).insert(source);
+			new SourceDao(config.db).insert(source);
 		} catch (Exception e) {
 			String message = String.format(
 					"Cannot save source %s in database.", source.getRefId());

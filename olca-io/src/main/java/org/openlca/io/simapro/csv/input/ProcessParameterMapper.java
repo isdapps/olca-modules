@@ -1,5 +1,7 @@
 package org.openlca.io.simapro.csv.input;
 
+import java.util.UUID;
+
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.ParameterDao;
 import org.openlca.core.model.Parameter;
@@ -61,27 +63,30 @@ class ProcessParameterMapper {
 	}
 
 	private Parameter create(InputParameterRow row) {
-		Parameter parameter = new Parameter();
-		parameter.setName(row.getName());
-		parameter.setInputParameter(true);
-		parameter.setScope(ParameterScope.PROCESS);
-		parameter.setValue(row.getValue());
-		parameter.setUncertainty(Uncertainties.get(row.getValue(),
+		Parameter p = new Parameter();
+		p.setRefId(UUID.randomUUID().toString());
+		p.setName(row.getName());
+		p.setInputParameter(true);
+		p.setScope(ParameterScope.PROCESS);
+		p.setValue(row.getValue());
+		p.setUncertainty(Uncertainties.get(row.getValue(),
 				row.getUncertainty()));
-		parameter.setDescription(row.getComment());
-		process.getParameters().add(parameter);
-		return parameter;
+		p.setDescription(row.getComment());
+		process.getParameters().add(p);
+		return p;
 	}
 
 	private Parameter create(CalculatedParameterRow row) {
-		Parameter parameter = new Parameter();
-		parameter.setName(row.getName());
-		parameter.setInputParameter(false);
-		parameter.setScope(ParameterScope.PROCESS);
-		parameter.setFormula(row.getExpression());
-		parameter.setDescription(row.getComment());
-		process.getParameters().add(parameter);
-		return parameter;
+		Parameter p = new Parameter();
+		p.setRefId(UUID.randomUUID().toString());
+		p.setName(row.getName());
+		p.setInputParameter(false);
+		p.setScope(ParameterScope.PROCESS);
+		String expr = row.getExpression();
+		p.setFormula(expr);
+		p.setDescription(row.getComment());
+		process.getParameters().add(p);
+		return p;
 	}
 
 	private void evalProcessParameters(long scopeId) {

@@ -6,8 +6,9 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Objects;
 
-import org.openlca.core.database.BaseDao;
+import org.openlca.core.database.FlowPropertyDao;
 import org.openlca.core.database.IDatabase;
+import org.openlca.core.database.UnitGroupDao;
 import org.openlca.core.model.FlowProperty;
 import org.openlca.core.model.Unit;
 import org.openlca.core.model.UnitGroup;
@@ -29,7 +30,7 @@ public class UnitMapping {
 		log.trace("create default mappings");
 		UnitMapping mapping = new UnitMapping();
 		try {
-			for (UnitGroup group : database.createDao(UnitGroup.class).getAll()) {
+			for (UnitGroup group : new UnitGroupDao(database).getAll()) {
 				FlowProperty prop = group.getDefaultFlowProperty();
 				if (prop == null)
 					prop = findProperty(database, group);
@@ -48,21 +49,21 @@ public class UnitMapping {
 	private static void registerUnits(UnitGroup group, FlowProperty prop,
 			UnitMapping mapping) {
 		for (Unit unit : group.getUnits()) {
-			List<String> names = unitNames(unit);
+			List<String> names = getNames(unit);
 			for (String name : names) {
 				UnitMappingEntry entry = new UnitMappingEntry();
-				entry.setFactor(unit.getConversionFactor());
-				entry.setFlowProperty(prop);
-				entry.setUnit(unit);
-				entry.setUnitGroup(group);
-				entry.setUnitName(name);
+				entry.factor = unit.getConversionFactor();
+				entry.flowProperty = prop;
+				entry.unit = unit;
+				entry.unitGroup = group;
+				entry.unitName = name;
 				mapping.put(name, entry);
 			}
 		}
 	}
 
 	private static FlowProperty findProperty(IDatabase database, UnitGroup group) {
-		BaseDao<FlowProperty> dao = database.createDao(FlowProperty.class);
+		FlowPropertyDao dao = new FlowPropertyDao(database);
 		for (FlowProperty prop : dao.getAll()) {
 			if (Objects.equals(group, prop.getUnitGroup()))
 				return prop;
@@ -70,7 +71,11 @@ public class UnitMapping {
 		return null;
 	}
 
-	private static List<String> unitNames(Unit unit) {
+	/**
+	 * Returns the name and the synonyms (so all unit symbols) for the given
+	 * unit in a single list.
+	 */
+	public static List<String> getNames(Unit unit) {
 		if (unit == null)
 			return Collections.emptyList();
 		List<String> names = new ArrayList<>();
@@ -85,17 +90,17 @@ public class UnitMapping {
 
 	public Double getConversionFactor(String unitName) {
 		UnitMappingEntry entry = entries.get(unitName);
-		return entry == null ? null : entry.getFactor();
+		return entry == null ? null : entry.factor;
 	}
 
 	public FlowProperty getFlowProperty(String unitName) {
 		UnitMappingEntry entry = entries.get(unitName);
-		return entry == null ? null : entry.getFlowProperty();
+		return entry == null ? null : entry.flowProperty;
 	}
 
 	public UnitGroup getUnitGroup(String unitName) {
 		UnitMappingEntry entry = entries.get(unitName);
-		return entry == null ? null : entry.getUnitGroup();
+		return entry == null ? null : entry.unitGroup;
 	}
 
 	public String[] getUnits() {

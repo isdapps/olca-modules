@@ -1,5 +1,8 @@
 package org.openlca.core.matrix;
 
+import gnu.trove.impl.Constants;
+import gnu.trove.set.hash.TLongHashSet;
+
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.SQLException;
@@ -9,10 +12,11 @@ import java.util.List;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.database.NativeSql.BatchInsertHandler;
+import org.openlca.core.database.ProductSystemDao;
 import org.openlca.core.matrix.cache.MatrixCache;
-import org.openlca.core.matrix.product.index.IProductIndexBuilder;
-import org.openlca.core.matrix.product.index.ProductIndexBuilder;
-import org.openlca.core.matrix.product.index.ProductIndexCutoffBuilder;
+import org.openlca.core.matrix.product.index.ITechIndexBuilder;
+import org.openlca.core.matrix.product.index.TechIndexBuilder;
+import org.openlca.core.matrix.product.index.TechIndexCutoffBuilder;
 import org.openlca.core.model.Flow;
 import org.openlca.core.model.Process;
 import org.openlca.core.model.ProcessLink;
@@ -21,9 +25,6 @@ import org.openlca.core.model.ProductSystem;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import gnu.trove.impl.Constants;
-import gnu.trove.set.hash.TLongHashSet;
-
 public class ProductSystemBuilder {
 
 	private Logger log = LoggerFactory.getLogger(this.getClass());
@@ -31,13 +32,20 @@ public class ProductSystemBuilder {
 	private MatrixCache matrixCache;
 	private IDatabase database;
 	private boolean preferSystemProcesses;
+	private boolean linkProvidedOnly;
 	private Double cutoff;
 
-	public ProductSystemBuilder(MatrixCache matrixCache,
-			boolean preferSystemProcesses) {
+	public ProductSystemBuilder(MatrixCache matrixCache) {
 		this.matrixCache = matrixCache;
 		this.database = matrixCache.getDatabase();
+	}
+
+	public void setPreferSystemProcesses(boolean preferSystemProcesses) {
 		this.preferSystemProcesses = preferSystemProcesses;
+	}
+
+	public void setLinkProvidedOnly(boolean linkProvidedOnly) {
+		this.linkProvidedOnly = linkProvidedOnly;
 	}
 
 	public void setCutoff(Double cutoff) {
@@ -49,7 +57,7 @@ public class ProductSystemBuilder {
 				|| system.getReferenceProcess() == null)
 			return system;
 		Process refProcess = system.getReferenceProcess();
-		Flow refProduct = system.getReferenceExchange().getFlow();
+		Flow refProduct = system.getReferenceExchange().flow;
 		if (refProduct == null)
 			return system;
 		LongPair ref = new LongPair(refProcess.getId(), refProduct.getId());
@@ -63,8 +71,7 @@ public class ProductSystemBuilder {
 			run(system, processProduct);
 			log.trace("reload system");
 			database.getEntityFactory().getCache().evict(ProductSystem.class);
-			return database.createDao(ProductSystem.class).getForId(
-					system.getId());
+			return new ProductSystemDao(database).getForId(system.getId());
 		} catch (Exception e) {
 			log.error("Failed to auto complete product system " + system, e);
 			return null;
@@ -73,18 +80,19 @@ public class ProductSystemBuilder {
 
 	private void run(ProductSystem system, LongPair processProduct) {
 		log.trace("build product index");
-		IProductIndexBuilder builder = getProductIndexBuilder(system);
-		builder.setPreferredType(preferSystemProcesses ? ProcessType.LCI_RESULT
-				: ProcessType.UNIT_PROCESS);
+		ITechIndexBuilder builder = getProductIndexBuilder(system);
+		builder.setPreferredType(preferSystemProcesses ? 
+				ProcessType.LCI_RESULT : ProcessType.UNIT_PROCESS);
+		builder.setLinkProvidedOnly(linkProvidedOnly);
 		TechIndex index = builder.build(processProduct);
 		log.trace("create new process links");
 		addLinksAndProcesses(system, index);
 	}
 
-	private IProductIndexBuilder getProductIndexBuilder(ProductSystem system) {
+	private ITechIndexBuilder getProductIndexBuilder(ProductSystem system) {
 		if (cutoff == null || cutoff == 0)
-			return new ProductIndexBuilder(matrixCache, system);
-		return new ProductIndexCutoffBuilder(matrixCache, system, cutoff);
+			return new TechIndexBuilder(matrixCache, system);
+		return new TechIndexCutoffBuilder(matrixCache, system, cutoff);
 	}
 
 	private void addLinksAndProcesses(ProductSystem system, TechIndex index) {

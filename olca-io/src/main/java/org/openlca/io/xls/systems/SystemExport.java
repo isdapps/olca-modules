@@ -17,12 +17,12 @@ import org.apache.poi.ss.usermodel.Workbook;
 import org.apache.poi.xssf.usermodel.XSSFWorkbook;
 import org.openlca.core.database.EntityCache;
 import org.openlca.core.math.DataStructures;
-import org.openlca.core.math.IMatrix;
 import org.openlca.core.matrix.FlowIndex;
 import org.openlca.core.matrix.ImpactTable;
 import org.openlca.core.matrix.Inventory;
 import org.openlca.core.matrix.LongIndex;
 import org.openlca.core.matrix.TechIndex;
+import org.openlca.core.matrix.format.IMatrix;
 import org.openlca.core.model.AllocationMethod;
 import org.openlca.core.model.descriptors.ImpactCategoryDescriptor;
 import org.openlca.io.xls.Excel;
@@ -265,7 +265,7 @@ public class SystemExport {
 		export.setColumnHeader(columnHeader);
 		export.setRowHeader(rowHeader);
 		export.setMatrix(inventory.interventionMatrix.createRealMatrix(
-				conf.getMatrixFactory()));
+				conf.getSolver()));
 		export.writeTo(workbook);
 	}
 
@@ -276,7 +276,7 @@ public class SystemExport {
 		export.setColumnHeader(columnHeader);
 		export.setRowHeader(rowHeader);
 		export.setMatrix(inventory.technologyMatrix.createRealMatrix(
-				conf.getMatrixFactory()));
+				conf.getSolver()));
 		Sheet sheet = export.writeTo(workbook);
 		int columnOffSet = rowHeader.getHeaderSize() + 1;
 		for (int i = 0; i < columnHeader.getHeaderSize(); i++) {
@@ -292,7 +292,7 @@ public class SystemExport {
 		export.setColumnHeader(columnHeader);
 		export.setRowHeader(rowHeader);
 		export.setMatrix(transpose(impactTable.factorMatrix
-				.createRealMatrix(conf.getMatrixFactory())));
+				.createRealMatrix(conf.getSolver())));
 		export.writeTo(workbook);
 	}
 
@@ -351,12 +351,12 @@ public class SystemExport {
 	}
 
 	private IMatrix transpose(IMatrix matrix) {
-		IMatrix result = conf.getMatrixFactory().create(
-				matrix.getColumnDimension(), matrix.getRowDimension());
-		for (int row = 0; row < matrix.getRowDimension(); row++) {
-			for (int column = 0; column < matrix.getColumnDimension(); column++) {
-				double value = matrix.getEntry(row, column);
-				result.setEntry(column, row, value);
+		IMatrix result = conf.getSolver().matrix(
+				matrix.columns(), matrix.rows());
+		for (int row = 0; row < matrix.rows(); row++) {
+			for (int column = 0; column < matrix.columns(); column++) {
+				double value = matrix.get(row, column);
+				result.set(column, row, value);
 			}
 		}
 		return result;

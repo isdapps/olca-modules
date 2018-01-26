@@ -10,17 +10,6 @@ public class FetchRequestData extends Dataset {
 
 	}
 
-	public FetchRequestData(Dataset descriptor) {
-		setRefId(descriptor.getRefId());
-		setType(descriptor.getType());
-		setVersion(descriptor.getVersion());
-		setLastChange(descriptor.getLastChange());
-		setName(descriptor.getName());
-		setCategoryRefId(descriptor.getCategoryRefId());
-		setCategoryType(descriptor.getCategoryType());
-		setFullPath(descriptor.getFullPath());
-	}
-
 	public void setDeleted(boolean deleted) {
 		this.deleted = deleted;
 	}
@@ -28,7 +17,7 @@ public class FetchRequestData extends Dataset {
 	public void setAdded(boolean added) {
 		this.added = added;
 	}
-	
+
 	public boolean isDeleted() {
 		return deleted;
 	}
@@ -36,5 +25,23 @@ public class FetchRequestData extends Dataset {
 	public boolean isAdded() {
 		return added;
 	}
+
+	public Dataset asDataset() {
+		Dataset ds = new Dataset();
+		ds.type = type;
+		ds.refId = refId;
+		ds.name = name;
+		ds.categoryRefId = categoryRefId;
+		ds.categoryType = categoryType;
+		ds.version = version;
+		ds.lastChange = lastChange;
+		ds.fullPath = fullPath;
+		return ds;
+	}
 	
+	@Override
+	public String toString() {
+		return super.toString() + ", added: " + added + ", deleted: " + deleted;
+	}
+
 }

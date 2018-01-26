@@ -12,13 +12,10 @@ import org.junit.AfterClass;
 import org.junit.BeforeClass;
 import org.junit.Test;
 import org.openlca.ilcd.SampleSource;
-import org.openlca.ilcd.commons.Other;
 import org.openlca.ilcd.contacts.Contact;
-import org.openlca.ilcd.processes.Process;
-import org.openlca.ilcd.processes.ProcessInformation;
-import org.openlca.ilcd.productmodel.ProductModel;
-import org.openlca.ilcd.sources.DataSetInformation;
+import org.openlca.ilcd.sources.DataSetInfo;
 import org.openlca.ilcd.sources.Source;
+import org.openlca.ilcd.sources.SourceInfo;
 
 public class ZipStoreTest {
 
@@ -43,16 +40,15 @@ public class ZipStoreTest {
 
 	@Test
 	public void testWithSource() throws Exception {
-		DataSetInformation dataSetInfo = new DataSetInformation();
-		String id = "110_abc";
-		dataSetInfo.setUUID(id);
+		DataSetInfo info = new DataSetInfo();
+		info.uuid = UUID.randomUUID().toString();
 		Source source = SampleSource.create();
-		store.put(source, id);
-		assertTrue(store.contains(Source.class, id));
-		Source copy = store.get(Source.class, id);
-		assertEquals(source.getSourceInformation().getDataSetInformation()
-				.getUUID(), copy.getSourceInformation().getDataSetInformation()
-						.getUUID());
+		source.sourceInfo = new SourceInfo();
+		source.sourceInfo.dataSetInfo = info;
+		store.put(source);
+		assertTrue(store.contains(Source.class, source.getUUID()));
+		Source copy = store.get(Source.class, source.getUUID());
+		assertEquals(source.sourceInfo.dataSetInfo.uuid, copy.sourceInfo.dataSetInfo.uuid);
 		assertNotNull(store.iterator(Source.class).next());
 	}
 
@@ -62,29 +58,4 @@ public class ZipStoreTest {
 		assertFalse(store.iterator(Contact.class).hasNext());
 	}
 
-	@Test
-	public void testWithProductModel() throws Exception {
-		Process p = makeProductModel();
-		store.put(p, "abc_123");
-		assertTrue(store.contains(Process.class, "abc_123"));
-		Process copy = store.get(Process.class, "abc_123");
-		ProductModel model = (ProductModel) copy.getProcessInformation()
-				.getDataSetInformation().getOther().getAny().get(0);
-		String name = model.getName();
-		assertEquals("product-model-name", name);
-	}
-
-	private Process makeProductModel() {
-		Process process = new Process();
-		ProcessInformation pi = new ProcessInformation();
-		process.setProcessInformation(pi);
-		org.openlca.ilcd.processes.DataSetInformation info = new org.openlca.ilcd.processes.DataSetInformation();
-		pi.setDataSetInformation(info);
-		ProductModel productModel = new ProductModel();
-		productModel.setName("product-model-name");
-		Other other = new Other();
-		info.setOther(other);
-		other.getAny().add(productModel);
-		return process;
-	}
 }

@@ -1,9 +1,10 @@
+
 package org.openlca.ilcd.commons;
 
 import java.io.Serializable;
-import java.math.BigInteger;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Objects;
 
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
@@ -13,122 +14,66 @@ import javax.xml.bind.annotation.XmlType;
 import javax.xml.bind.annotation.XmlValue;
 import javax.xml.namespace.QName;
 
-/**
- * <p>
- * Java class for CategoryType complex type.
- * 
- * <p>
- * The following schema fragment specifies the expected content contained within
- * this class.
- * 
- * <pre>
- * &lt;complexType name="CategoryType">
- *   &lt;simpleContent>
- *     &lt;extension base="&lt;http://lca.jrc.it/ILCD/Common>String">
- *       &lt;attribute name="level" use="required" type="{http://lca.jrc.it/ILCD/Common}LevelType" />
- *       &lt;attribute name="catId" type="{http://www.w3.org/2001/XMLSchema}string" />
- *       &lt;anyAttribute processContents='lax' namespace='##other'/>
- *     &lt;/extension>
- *   &lt;/simpleContent>
- * &lt;/complexType>
- * </pre>
- * 
- * 
- */
 @XmlAccessorType(XmlAccessType.FIELD)
-@XmlType(name = "CategoryType", propOrder = { "value" })
+@XmlType(name = "ClassType", propOrder = {
+		"value"
+})
 public class Category implements Serializable {
 
 	private final static long serialVersionUID = 1L;
+
 	@XmlValue
-	protected String value;
+	public String value;
+
+	/**
+	 * If more than one class is specified in a hierarchical classification
+	 * system, the hierarchy level (1,2,...) could be specified with this
+	 * attribute of class.
+	 */
 	@XmlAttribute(name = "level", required = true)
-	protected BigInteger level;
-	@XmlAttribute(name = "catId")
-	protected String catId;
+	public int level;
+
+	/**
+	 * Unique identifier for the class. [ If such identifiers are also defined
+	 * in the referenced category file, they should be identical. Identifiers
+	 * can be UUID's, but also other forms are allowed.]
+	 */
+	@XmlAttribute(name = "classId")
+	public String classId;
+
 	@XmlAnyAttribute
-	private Map<QName, String> otherAttributes = new HashMap<>();
+	public final Map<QName, String> otherAttributes = new HashMap<>();
 
-	/**
-	 * String with a maximum length of 500 characters. Must have a minimum
-	 * length of 1.
-	 * 
-	 * @return possible object is {@link String }
-	 * 
-	 */
-	public String getValue() {
-		return value;
+	@Override
+	public Category clone() {
+		Category clone = new Category();
+		clone.value = value;
+		clone.level = level;
+		clone.classId = classId;
+		clone.otherAttributes.putAll(otherAttributes);
+		return clone;
 	}
 
-	/**
-	 * Sets the value of the value property.
-	 * 
-	 * @param value
-	 *            allowed object is {@link String }
-	 * 
-	 */
-	public void setValue(String value) {
-		this.value = value;
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == null)
+			return false;
+		if (obj == this)
+			return true;
+		if (!(obj instanceof Category))
+			return false;
+		Category other = (Category) obj;
+		if (classId != null || other.classId != null)
+			return Objects.equals(classId, other.classId);
+		if (level != other.level)
+			return false;
+		return Objects.equals(value, other.value);
 	}
 
-	/**
-	 * Gets the value of the level property.
-	 * 
-	 * @return possible object is {@link BigInteger }
-	 * 
-	 */
-	public BigInteger getLevel() {
-		return level;
+	@Override
+	public int hashCode() {
+		if (classId != null)
+			return classId.hashCode();
+		return Objects.hash(level, value);
 	}
-
-	/**
-	 * Sets the value of the level property.
-	 * 
-	 * @param value
-	 *            allowed object is {@link BigInteger }
-	 * 
-	 */
-	public void setLevel(BigInteger value) {
-		this.level = value;
-	}
-
-	/**
-	 * Gets the value of the catId property.
-	 * 
-	 * @return possible object is {@link String }
-	 * 
-	 */
-	public String getCatId() {
-		return catId;
-	}
-
-	/**
-	 * Sets the value of the catId property.
-	 * 
-	 * @param value
-	 *            allowed object is {@link String }
-	 * 
-	 */
-	public void setCatId(String value) {
-		this.catId = value;
-	}
-
-	/**
-	 * Gets a map that contains attributes that aren't bound to any typed
-	 * property on this class.
-	 * 
-	 * <p>
-	 * the map is keyed by the name of the attribute and the value is the string
-	 * value of the attribute.
-	 * 
-	 * the map returned by this method is live, and you can add new attribute by
-	 * updating the map directly. Because of this design, there's no setter.
-	 * 
-	 * 
-	 * @return always non-null
-	 */
-	public Map<QName, String> getOtherAttributes() {
-		return otherAttributes;
-	}
-
 }

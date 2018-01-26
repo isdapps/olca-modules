@@ -1,7 +1,6 @@
 package org.openlca.core.database.references;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -10,18 +9,21 @@ import java.util.Set;
 
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.ParameterDao;
-import org.openlca.core.database.references.Search.Ref;
 import org.openlca.core.model.Category;
 import org.openlca.core.model.Parameter;
 import org.openlca.core.model.ParameterScope;
 import org.openlca.core.model.descriptors.ParameterDescriptor;
 import org.openlca.util.Formula;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ParameterReferenceSearch extends
-		BaseReferenceSearch<ParameterDescriptor> {
+public class ParameterReferenceSearch extends BaseReferenceSearch<ParameterDescriptor> {
 
-	private final static Ref[] references = { new Ref(Category.class,
-			"category", "f_category", true) };
+	private final static Logger log = LoggerFactory.getLogger(ParameterReferenceSearch.class);
+
+	private final static Ref[] references = {
+			new Ref(Category.class, "category", "f_category", true)
+	};
 
 	public ParameterReferenceSearch(IDatabase database, boolean includeOptional) {
 		super(database, Parameter.class, includeOptional);
@@ -36,9 +38,8 @@ public class ParameterReferenceSearch extends
 	}
 
 	private List<Reference> findParameterReferences(Set<Long> ids) {
-		if (ids.isEmpty())
-			return Collections.emptyList();
-		List<String> formulaQueries = createFormulaQueries(ids);
+		List<String> formulaQueries = Search.createQueries("SELECT id, lower(formula) FROM tbl_parameters"
+				, "WHERE id IN", ids);
 		Map<Long, Set<String>> variables = getVariablesUsedInFormulas(formulaQueries);
 		Set<String> names = new HashSet<>();
 		for (Set<String> n : variables.values())
@@ -64,8 +65,7 @@ public class ParameterReferenceSearch extends
 			Map<Long, Set<String>> ownerToNames) {
 		for (long ownerId : ownerToNames.keySet())
 			if (ownerToNames.get(ownerId).contains(name))
-				return new Reference("", Parameter.class, 0, Parameter.class,
-						ownerId);
+				return new Reference("", Parameter.class, 0, Parameter.class, ownerId);
 		return null;
 	}
 
@@ -77,20 +77,13 @@ public class ParameterReferenceSearch extends
 				Set<String> set = variables.get(ownerId);
 				if (set == null)
 					variables.put(ownerId, set = new HashSet<>());
-				set.addAll(Formula.getVariables(result.getString(2)));
+				try {
+					set.addAll(Formula.getVariables(result.getString(2)));
+				} catch (Throwable e) {
+					log.warn("Failed parsing formula of parameter in model " + ownerId, e);
+				}
 			});
 		return variables;
 	}
 
-	private List<String> createFormulaQueries(Set<Long> ids) {
-		List<String> queries = new ArrayList<>();
-		List<String> idLists = Search.asSqlLists(ids.toArray());
-		for (String idList : idLists) {
-			StringBuilder query = new StringBuilder();
-			query.append("SELECT id, lower(formula) FROM tbl_parameters ");
-			query.append("WHERE id IN (" + idList + ")");
-			queries.add(query.toString());
-		}
-		return queries;
-	}
 }

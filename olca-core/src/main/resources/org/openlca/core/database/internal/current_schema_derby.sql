@@ -22,7 +22,7 @@ CREATE TABLE openlca_version (
 	version SMALLINT	
 	
 );
-INSERT INTO openlca_version (version) VALUES (5);
+INSERT INTO openlca_version (version) VALUES (7);
 
 
 CREATE TABLE tbl_categories (
@@ -225,6 +225,11 @@ CREATE TABLE tbl_processes (
 	f_location BIGINT, 
 	f_process_doc BIGINT, 
 	f_currency BIGINT,
+	f_dq_system BIGINT,
+	dq_entry VARCHAR(50),
+	f_exchange_dq_system BIGINT,
+	f_social_dq_system BIGINT,
+	last_internal_id INTEGER,
 
 	PRIMARY KEY (id)	
 
@@ -255,7 +260,7 @@ CREATE TABLE tbl_process_docs (
 	data_selection CLOB(64 K), 
 	f_reviewer BIGINT, 
 	
-	project VARCHAR(255), 
+	project CLOB(64 K), 
 	creation_date TIMESTAMP, 
 	intended_application CLOB(64 K), 
 	restrictions CLOB(64 K),
@@ -280,6 +285,7 @@ CREATE TABLE tbl_exchanges (
 
 	id BIGINT NOT NULL, 
 	f_owner BIGINT, 
+	internal_id INTEGER,
 	f_flow BIGINT, 
 	f_unit BIGINT, 
 	is_input SMALLINT default 0, 
@@ -302,7 +308,7 @@ CREATE TABLE tbl_exchanges (
 	parameter3_value DOUBLE, 
 	parameter3_formula VARCHAR(1000), 
 	
-	pedigree_uncertainty VARCHAR(50),
+	dq_entry VARCHAR(50),
 	base_uncertainty DOUBLE,
 	
 	PRIMARY KEY (id)
@@ -336,6 +342,7 @@ CREATE TABLE tbl_product_systems (
 	f_category BIGINT,
 	description CLOB(64 K),
 
+	cutoff DOUBLE,
 	target_amount DOUBLE,
 	f_reference_process BIGINT, 
 	f_reference_exchange BIGINT, 
@@ -379,6 +386,8 @@ CREATE TABLE tbl_impact_methods (
 	f_category BIGINT,
 	description CLOB(64 K),
 
+	parameter_mean VARCHAR(255),
+	
 	PRIMARY KEY (id)
 	
 );
@@ -610,5 +619,40 @@ CREATE TABLE tbl_social_aspects (
 	f_source BIGINT,
 	quality VARCHAR(255),
 
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE tbl_dq_systems (
+
+	id BIGINT NOT NULL,
+	name VARCHAR(255), 
+	ref_id VARCHAR(36),
+	version BIGINT, 
+	last_change BIGINT,
+	f_category BIGINT, 
+	f_source BIGINT, 
+	description CLOB(64 K),
+	has_uncertainties SMALLINT default 0,
+
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE tbl_dq_indicators ( 
+	id BIGINT NOT NULL, 
+	name VARCHAR(255), 
+	position INTEGER NOT NULL, 
+	f_dq_system BIGINT, 
+
+	PRIMARY KEY (id)
+);
+
+CREATE TABLE tbl_dq_scores ( 
+	id BIGINT NOT NULL, 
+	position INTEGER NOT NULL, 
+	description CLOB(64 K), 
+	label VARCHAR(255), 
+	uncertainty DOUBLE default 0, 
+	f_dq_indicator BIGINT,
+				
 	PRIMARY KEY (id)
 );

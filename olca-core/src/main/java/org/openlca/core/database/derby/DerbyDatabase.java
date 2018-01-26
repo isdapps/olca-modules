@@ -12,7 +12,6 @@ import javax.persistence.EntityManagerFactory;
 
 import org.apache.derby.jdbc.EmbeddedDriver;
 import org.eclipse.persistence.jpa.PersistenceProvider;
-import org.openlca.core.database.BaseDao;
 import org.openlca.core.database.DatabaseException;
 import org.openlca.core.database.DbUtils;
 import org.openlca.core.database.IDatabase;
@@ -22,8 +21,7 @@ import org.openlca.core.database.internal.ScriptRunner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.jolbox.bonecp.BoneCP;
-import com.jolbox.bonecp.BoneCPConfig;
+import com.zaxxer.hikari.HikariDataSource;
 
 public class DerbyDatabase extends Notifiable implements IDatabase {
 
@@ -32,7 +30,7 @@ public class DerbyDatabase extends Notifiable implements IDatabase {
 	private String url;
 	private File folder;
 	private boolean closed = false;
-	private BoneCP connectionPool;
+	private HikariDataSource connectionPool;
 
 	public static DerbyDatabase createInMemory() {
 		return new DerbyDatabase();
@@ -131,9 +129,8 @@ public class DerbyDatabase extends Notifiable implements IDatabase {
 
 	private void initConnectionPool() {
 		try {
-			BoneCPConfig config = new BoneCPConfig();
-			config.setJdbcUrl(url);
-			connectionPool = new BoneCP(config);
+			connectionPool = new HikariDataSource();
+			connectionPool.setJdbcUrl(url);
 		} catch (Exception e) {
 			log.error("failed to initialize connection pool", e);
 			throw new DatabaseException("Could not create a connection", e);
@@ -148,7 +145,7 @@ public class DerbyDatabase extends Notifiable implements IDatabase {
 		if (entityFactory != null && entityFactory.isOpen())
 			entityFactory.close();
 		if (connectionPool != null)
-			connectionPool.shutdown();
+			connectionPool.close();
 		try {
 			DriverManager.getConnection(url + ";shutdown=true");
 			// TODO: single database shutdown throws unexpected
@@ -194,11 +191,6 @@ public class DerbyDatabase extends Notifiable implements IDatabase {
 	@Override
 	public EntityManagerFactory getEntityFactory() {
 		return entityFactory;
-	}
-
-	@Override
-	public <T> BaseDao<T> createDao(Class<T> clazz) {
-		return new BaseDao<>(clazz, this);
 	}
 
 	@Override

@@ -13,23 +13,22 @@ import org.slf4j.LoggerFactory;
 
 public class RepositoryConfig {
 
-	private final static Logger log = LoggerFactory
-			.getLogger(RepositoryConfig.class);
-	private final IDatabase database;
-	private final String baseUrl;
-	private final String repositoryId;
-	private final String username;
-	private final String password;
+	private final static Logger log = LoggerFactory.getLogger(RepositoryConfig.class);
+	public final IDatabase database;
+	public final String baseUrl;
+	public final String repositoryId;
+	public final CredentialSupplier credentials;
 	private String lastCommitId;
 
-	RepositoryConfig(IDatabase database, String baseUrl, String repositoryId,
-			String lastCommitId, String username, String password) {
+	public RepositoryConfig(IDatabase database, String baseUrl, String repositoryId) {
+		this(database, baseUrl, repositoryId, null);
+	}
+
+	public RepositoryConfig(IDatabase database, String baseUrl, String repositoryId, CredentialSupplier credentials) {
 		this.database = database;
 		this.baseUrl = baseUrl;
 		this.repositoryId = repositoryId;
-		this.lastCommitId = lastCommitId;
-		this.username = username;
-		this.password = password;
+		this.credentials = credentials;
 	}
 
 	public static RepositoryConfig loadFor(IDatabase database) {
@@ -46,8 +45,10 @@ public class RepositoryConfig {
 			String password = properties.getProperty("password");
 			if ("null".equals(lastCommitId))
 				lastCommitId = null;
-			return new RepositoryConfig(database, baseUrl, repositoryId,
-					lastCommitId, username, password);
+			CredentialSupplier credentials = new CredentialSupplier(username, password);
+			RepositoryConfig config = new RepositoryConfig(database, baseUrl, repositoryId, credentials);
+			config.lastCommitId = lastCommitId;
+			return config;
 		} catch (IOException e) {
 			log.error("Error loading repository properties", e);
 			return null;
@@ -63,21 +64,20 @@ public class RepositoryConfig {
 			Properties properties = new Properties();
 			properties.setProperty("baseUrl", baseUrl);
 			properties.setProperty("repositoryId", repositoryId);
-			if (lastCommitId == null)
-				lastCommitId = "null";
+			String lastCommitId = this.lastCommitId != null ? this.lastCommitId : "null";
 			properties.setProperty("lastCommitId", lastCommitId);
-			properties.setProperty("username", username);
-			properties.setProperty("password", password); // TODO encrypt
+			properties.setProperty("username", credentials.username);
+			// TODO encrypt
+			properties.setProperty("password", credentials.password);
 			properties.store(stream, "");
 		} catch (IOException e) {
 			log.error("Error saving repository properties", e);
 		}
 	}
 
-	public static RepositoryConfig connect(IDatabase database, String baseUrl,
-			String repositoryId, String username, String password) {
-		RepositoryConfig config = new RepositoryConfig(database, baseUrl,
-				repositoryId, null, username, password);
+	public static RepositoryConfig connect(IDatabase database, String baseUrl, String repositoryId,
+			CredentialSupplier credentials) {
+		RepositoryConfig config = new RepositoryConfig(database, baseUrl, repositoryId, credentials);
 		config.save();
 		return config;
 	}
@@ -86,16 +86,12 @@ public class RepositoryConfig {
 		File configFile = getConfigFile(database);
 		configFile.delete();
 		File fileStorage = database.getFileStorageLocation();
-		Directories.delete(new File(fileStorage, "cloud/" + getRepositoryId()));
+		Directories.delete(new File(fileStorage, "cloud/" + repositoryId));
 	}
 
 	private static File getConfigFile(IDatabase database) {
 		return new File(database.getFileStorageLocation(),
 				"repository.properties");
-	}
-
-	String getBaseUrl() {
-		return baseUrl;
 	}
 
 	public String getServerUrl() {
@@ -107,10 +103,6 @@ public class RepositoryConfig {
 		if (slashIndex == -1)
 			return baseUrl;
 		return baseUrl.substring(0, slashIndex);
-	}
-
-	public String getRepositoryId() {
-		return repositoryId;
 	}
 
 	public String getRepositoryOwner() {
@@ -128,18 +120,6 @@ public class RepositoryConfig {
 
 	public String getLastCommitId() {
 		return lastCommitId;
-	}
-
-	public IDatabase getDatabase() {
-		return database;
-	}
-
-	public String getUsername() {
-		return username;
-	}
-
-	String getPassword() {
-		return password;
 	}
 
 }

@@ -9,19 +9,22 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Function;
 
 import javax.persistence.EntityManager;
 import javax.persistence.Table;
 import javax.persistence.TypedQuery;
 
+import org.openlca.core.model.AbstractEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class BaseDao<T> implements IDao<T> {
+public class BaseDao<T extends AbstractEntity> implements IDao<T> {
 
 	/**
 	 * A database dependent field for the maximum size of lists in JPQL queries.
@@ -32,7 +35,7 @@ public class BaseDao<T> implements IDao<T> {
 	protected Logger log = LoggerFactory.getLogger(this.getClass());
 	protected IDatabase database;
 
-	public BaseDao(Class<T> entityType, IDatabase database) {
+	protected BaseDao(Class<T> entityType, IDatabase database) {
 		this.entityType = entityType;
 		this.database = database;
 	}
@@ -52,8 +55,10 @@ public class BaseDao<T> implements IDao<T> {
 
 	@Override
 	public Map<Long, Boolean> contains(Set<Long> ids) {
-		if (ids.isEmpty())
+		if (ids == null || ids.isEmpty())
 			return Collections.emptyMap();
+		if (ids.size() > MAX_LIST_SIZE)
+			return executeChunked2(ids, this::contains);
 		Map<Long, Boolean> result = new HashMap<>();
 		for (Long id : ids)
 			result.put(id, false);
@@ -97,7 +102,6 @@ public class BaseDao<T> implements IDao<T> {
 			em.getTransaction().begin();
 			em.remove(em.merge(entity));
 			em.getTransaction().commit();
-			database.notifyDelete(entity);
 		} catch (Exception e) {
 			DatabaseException.logAndThrow(log, "Error while deleting "
 					+ entityType.getSimpleName(), e);
@@ -118,8 +122,6 @@ public class BaseDao<T> implements IDao<T> {
 				em.remove(em.merge(entity));
 			}
 			em.getTransaction().commit();
-			for (T entity : entities)
-				database.notifyDelete(entity);
 		} catch (Exception e) {
 			DatabaseException.logAndThrow(log, "Error while deleting "
 					+ entityType.getSimpleName(), e);
@@ -137,7 +139,6 @@ public class BaseDao<T> implements IDao<T> {
 			em.getTransaction().begin();
 			T retval = em.merge(entity);
 			em.getTransaction().commit();
-			database.notifyUpdate(entity);
 			return retval;
 		} catch (Exception e) {
 			DatabaseException.logAndThrow(log, "Error while updating "
@@ -157,7 +158,6 @@ public class BaseDao<T> implements IDao<T> {
 			em.getTransaction().begin();
 			em.persist(entity);
 			em.getTransaction().commit();
-			database.notifyInsert(entity);
 			return entity;
 		} catch (Exception e) {
 			DatabaseException.logAndThrow(log, "Error while inserting "
@@ -188,26 +188,8 @@ public class BaseDao<T> implements IDao<T> {
 	public List<T> getForIds(Set<Long> ids) {
 		if (ids == null || ids.isEmpty())
 			return Collections.emptyList();
-		if (ids.size() <= MAX_LIST_SIZE)
-			return fetchForIds(ids);
-		return fetchForChunkedIds(ids);
-	}
-
-	private List<T> fetchForChunkedIds(Set<Long> ids) {
-		List<Long> rest = new ArrayList<>(ids);
-		List<T> results = new ArrayList<>();
-		while (!rest.isEmpty()) {
-			int toPos = rest.size() > MAX_LIST_SIZE ? MAX_LIST_SIZE : rest
-					.size();
-			List<Long> nextChunk = rest.subList(0, toPos);
-			List<T> chunkResults = fetchForIds(nextChunk);
-			results.addAll(chunkResults);
-			nextChunk.clear(); // clears also the elements in rest
-		}
-		return results;
-	}
-
-	private List<T> fetchForIds(Collection<Long> ids) {
+		if (ids.size() > MAX_LIST_SIZE)
+			return executeChunked(ids, this::getForIds);
 		EntityManager em = createManager();
 		try {
 			String jpql = "SELECT o FROM " + entityType.getSimpleName()
@@ -222,6 +204,41 @@ public class BaseDao<T> implements IDao<T> {
 		} finally {
 			em.close();
 		}
+	}
+
+	// Executes the query method chunked, (for methods with List return value)
+	protected <X, Y> List<Y> executeChunked(Set<X> set,
+			Function<Set<X>, List<Y>> queryMethod) {
+		List<Set<X>> split = split(set);
+		List<Y> all = new ArrayList<>();
+		for (Set<X> s : split) {
+			all.addAll(queryMethod.apply(s));
+		}
+		return all;
+	}
+
+	// Executes the query method chunked, (for methods with Map return value)
+	private <X, Y> Map<X, Y> executeChunked2(Set<X> set,
+			Function<Set<X>, Map<X, Y>> queryMethod) {
+		List<Set<X>> split = split(set);
+		Map<X, Y> all = new HashMap<>();
+		for (Set<X> s : split) {
+			all.putAll(queryMethod.apply(s));
+		}
+		return all;
+	}
+
+	private <X> List<Set<X>> split(Set<X> all) {
+		List<Set<X>> split = new ArrayList<>();
+		List<X> rest = new ArrayList<>(all);
+		while (!rest.isEmpty()) {
+			int toPos = rest.size() > MAX_LIST_SIZE ? MAX_LIST_SIZE : rest
+					.size();
+			List<X> nextChunk = rest.subList(0, toPos);
+			split.add(new HashSet<X>(nextChunk));
+			nextChunk.clear(); // clears also the elements in rest
+		}
+		return split;
 	}
 
 	@Override

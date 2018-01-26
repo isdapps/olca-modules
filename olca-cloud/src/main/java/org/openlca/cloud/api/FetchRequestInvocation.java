@@ -1,10 +1,9 @@
 package org.openlca.cloud.api;
 
 import java.util.Collections;
-import java.util.List;
+import java.util.Set;
 
 import org.openlca.cloud.model.data.FetchRequestData;
-import org.openlca.cloud.util.Strings;
 import org.openlca.cloud.util.Valid;
 import org.openlca.cloud.util.WebRequests;
 import org.openlca.cloud.util.WebRequests.Type;
@@ -26,6 +25,7 @@ class FetchRequestInvocation {
 	String sessionId;
 	String repositoryId;
 	String lastCommitId;
+	boolean sync;
 
 	/**
 	 * Retrieves all changed data sets (only the descriptors)
@@ -35,19 +35,18 @@ class FetchRequestInvocation {
 	 * @throws WebRequestException
 	 *             If user has no access to the specified repository
 	 */
-	List<FetchRequestData> execute() throws WebRequestException {
+	Set<FetchRequestData> execute() throws WebRequestException {
 		Valid.checkNotEmpty(baseUrl, "base url");
-		Valid.checkNotEmpty(sessionId, "session id");
 		Valid.checkNotEmpty(repositoryId, "repository id");
-		if (lastCommitId == null || lastCommitId.isEmpty())
-			lastCommitId = "null";
-		String url = Strings.concat(baseUrl, PATH, repositoryId, "/",
-				lastCommitId);
+		String url = baseUrl + PATH + repositoryId + "/" + "?sync=" + sync;
+		if (lastCommitId != null) {
+			url += "&lastCommitId=" + lastCommitId;
+		}
 		ClientResponse response = WebRequests.call(Type.GET, url, sessionId);
 		if (response.getStatus() == Status.NO_CONTENT.getStatusCode())
-			return Collections.emptyList();
+			return Collections.emptySet();
 		return new Gson().fromJson(response.getEntity(String.class),
-				new TypeToken<List<FetchRequestData>>() {
+				new TypeToken<Set<FetchRequestData>>() {
 				}.getType());
 	}
 

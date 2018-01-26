@@ -1,30 +1,28 @@
 package org.openlca.ilcd.util;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openlca.ilcd.commons.Class;
-import org.openlca.ilcd.commons.ClassificationInformation;
-import org.openlca.ilcd.commons.DataSetReference;
-import org.openlca.ilcd.flowproperties.AdministrativeInformation;
-import org.openlca.ilcd.flowproperties.DataEntry;
-import org.openlca.ilcd.flowproperties.DataSetInformation;
+import org.openlca.ilcd.commons.Category;
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.commons.Ref;
+import org.openlca.ilcd.flowproperties.AdminInfo;
+import org.openlca.ilcd.flowproperties.DataSetInfo;
 import org.openlca.ilcd.flowproperties.FlowProperty;
-import org.openlca.ilcd.flowproperties.FlowPropertyInformation;
-import org.openlca.ilcd.flowproperties.Publication;
+import org.openlca.ilcd.flowproperties.FlowPropertyInfo;
 import org.openlca.ilcd.flowproperties.QuantitativeReference;
 
 public class FlowPropertyBag implements IBag<FlowProperty> {
 
 	private FlowProperty flowProperty;
-	private IlcdConfig config;
+	private String[] langs;
 
-	public FlowPropertyBag(FlowProperty flowProperty, IlcdConfig config) {
+	public FlowPropertyBag(FlowProperty flowProperty, String... langs) {
 		this.flowProperty = flowProperty;
-		this.config = config;
+		this.langs = langs;
 	}
 
 	@Override
@@ -34,80 +32,60 @@ public class FlowPropertyBag implements IBag<FlowProperty> {
 
 	@Override
 	public String getId() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null)
-			return info.getUUID();
-		return null;
+		return flowProperty == null ? null : flowProperty.getUUID();
 	}
 
 	public String getName() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getName(), config);
+			return LangString.getFirst(info.name, langs);
 		return null;
 	}
 
 	public String getComment() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getGeneralComment(), config);
+			return LangString.getFirst(info.generalComment, langs);
 		return null;
 	}
 
-	public List<Class> getSortedClasses() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null) {
-			ClassificationInformation classInfo = info
-					.getClassificationInformation();
-			return ClassList.sortedList(classInfo);
-		}
-		return Collections.emptyList();
+	public List<Category> getSortedClasses() {
+		return ClassList.sortedList(flowProperty);
 	}
 
-	public DataSetReference getUnitGroupReference() {
-		FlowPropertyInformation info = flowProperty
-				.getFlowPropertyInformation();
+	public Ref getUnitGroupReference() {
+		FlowPropertyInfo info = flowProperty.flowPropertyInfo;
 		if (info != null) {
-			QuantitativeReference qRef = info.getQuantitativeReference();
+			QuantitativeReference qRef = info.quantitativeReference;
 			if (qRef != null) {
-				return qRef.getUnitGroup();
+				return qRef.unitGroup;
 			}
 		}
 		return null;
 	}
 
-	private DataSetInformation getDataSetInformation() {
-		if (flowProperty.getFlowPropertyInformation() != null)
-			return flowProperty.getFlowPropertyInformation()
-					.getDataSetInformation();
+	private DataSetInfo getDataSetInformation() {
+		if (flowProperty.flowPropertyInfo != null)
+			return flowProperty.flowPropertyInfo.dataSetInfo;
 		return null;
 	}
 
 	public String getVersion() {
 		if (flowProperty == null)
 			return null;
-		AdministrativeInformation info = flowProperty
-				.getAdministrativeInformation();
-		if (info == null)
-			return null;
-		Publication pub = info.getPublication();
-		if (pub == null)
-			return null;
-		else
-			return pub.getDataSetVersion();
+		return flowProperty.getVersion();
 	}
 
 	public Date getTimeStamp() {
 		if (flowProperty == null)
 			return null;
-		AdministrativeInformation info = flowProperty
-				.getAdministrativeInformation();
+		AdminInfo info = flowProperty.adminInfo;
 		if (info == null)
 			return null;
-		DataEntry entry = info.getDataEntry();
+		DataEntry entry = info.dataEntry;
 		if (entry == null)
 			return null;
-		XMLGregorianCalendar cal = entry.getTimeStamp();
+		XMLGregorianCalendar cal = entry.timeStamp;
 		if (cal == null)
 			return null;
 		else

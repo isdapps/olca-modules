@@ -6,6 +6,12 @@ import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.datatype.XMLGregorianCalendar;
 import javax.xml.namespace.QName;
 
+import org.openlca.ilcd.commons.annotations.FreeText;
+import org.openlca.ilcd.flows.Compartment;
+import org.openlca.ilcd.flows.CompartmentList;
+import org.openlca.ilcd.flows.FlowCategoryInfo;
+import org.openlca.ilcd.methods.Location;
+
 /**
  * This object contains factory methods for each Java content interface and Java
  * element interface generated in the org.openlca.ilcd.commons package.
@@ -28,8 +34,6 @@ public class ObjectFactory {
 			"http://lca.jrc.it/ILCD/Common", "referenceToOwnershipOfDataSet");
 	private final static QName _ReferenceToRegistrationAuthority_QNAME = new QName(
 			"http://lca.jrc.it/ILCD/Common", "referenceToRegistrationAuthority");
-	private final static QName _DataQualityIndicators_QNAME = new QName(
-			"http://lca.jrc.it/ILCD/Common", "dataQualityIndicators");
 	private final static QName _ReferenceToConvertedOriginalDataSetFrom_QNAME = new QName(
 			"http://lca.jrc.it/ILCD/Common",
 			"referenceToConvertedOriginalDataSetFrom");
@@ -80,14 +84,6 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link Wrapper }
-	 * 
-	 */
-	public Wrapper createWrapper() {
-		return new Wrapper();
-	}
-
-	/**
 	 * Create an instance of {@link Other }
 	 * 
 	 */
@@ -96,19 +92,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link DataSetReference }
+	 * Create an instance of {@link Ref }
 	 * 
 	 */
-	public DataSetReference createDataSetReference() {
-		return new DataSetReference();
-	}
-
-	/**
-	 * Create an instance of {@link FreeText }
-	 * 
-	 */
-	public FreeText createFreeText() {
-		return new FreeText();
+	public Ref createDataSetReference() {
+		return new Ref();
 	}
 
 	/**
@@ -120,51 +108,27 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link Label }
+	 * Create an instance of {@link FlowCategoryInfo }
 	 * 
 	 */
-	public Label createLabel() {
-		return new Label();
+	public FlowCategoryInfo createFlowCategoryInformation() {
+		return new FlowCategoryInfo();
 	}
 
 	/**
-	 * Create an instance of {@link DataQualityIndicatorList }
+	 * Create an instance of {@link Compartment }
 	 * 
 	 */
-	public DataQualityIndicatorList createDataQualityIndicatorList() {
-		return new DataQualityIndicatorList();
+	public Compartment createCategory() {
+		return new Compartment();
 	}
 
 	/**
-	 * Create an instance of {@link FlowCategoryInformation }
+	 * Create an instance of {@link Location }
 	 * 
 	 */
-	public FlowCategoryInformation createFlowCategoryInformation() {
-		return new FlowCategoryInformation();
-	}
-
-	/**
-	 * Create an instance of {@link Category }
-	 * 
-	 */
-	public Category createCategory() {
-		return new Category();
-	}
-
-	/**
-	 * Create an instance of {@link ClassificationInformation }
-	 * 
-	 */
-	public ClassificationInformation createClassificationInformation() {
-		return new ClassificationInformation();
-	}
-
-	/**
-	 * Create an instance of {@link LocationType }
-	 * 
-	 */
-	public LocationType createLocationType() {
-		return new LocationType();
+	public Location createLocationType() {
+		return new Location();
 	}
 
 	/**
@@ -176,11 +140,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link FlowCategorization }
+	 * Create an instance of {@link CompartmentList }
 	 * 
 	 */
-	public FlowCategorization createFlowCategorization() {
-		return new FlowCategorization();
+	public CompartmentList createFlowCategorization() {
+		return new CompartmentList();
 	}
 
 	/**
@@ -192,19 +156,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link Class }
+	 * Create an instance of {@link Category }
 	 * 
 	 */
-	public Class createClass() {
-		return new Class();
-	}
-
-	/**
-	 * Create an instance of {@link ShortText }
-	 * 
-	 */
-	public ShortText createShortText() {
-		return new ShortText();
+	public Category createClass() {
+		return new Category();
 	}
 
 	/**
@@ -221,8 +177,8 @@ public class ObjectFactory {
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "reviewDetails")
-	public JAXBElement<FreeText> createReviewDetails(FreeText value) {
-		return new JAXBElement<>(_ReviewDetails_QNAME, FreeText.class, null,
+	public JAXBElement<LangString> createReviewDetails(LangString value) {
+		return new JAXBElement<>(_ReviewDetails_QNAME, LangString.class, null,
 				value);
 	}
 
@@ -238,52 +194,37 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataSetReference }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <} {@link Ref }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "referenceToOwnershipOfDataSet")
-	public JAXBElement<DataSetReference> createReferenceToOwnershipOfDataSet(
-			DataSetReference value) {
+	public JAXBElement<Ref> createReferenceToOwnershipOfDataSet(
+			Ref value) {
 		return new JAXBElement<>(_ReferenceToOwnershipOfDataSet_QNAME,
-				DataSetReference.class, null, value);
+				Ref.class, null, value);
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataSetReference }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <} {@link Ref }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "referenceToRegistrationAuthority")
-	public JAXBElement<DataSetReference> createReferenceToRegistrationAuthority(
-			DataSetReference value) {
+	public JAXBElement<Ref> createReferenceToRegistrationAuthority(
+			Ref value) {
 		return new JAXBElement<>(_ReferenceToRegistrationAuthority_QNAME,
-				DataSetReference.class, null, value);
+				Ref.class, null, value);
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataQualityIndicatorList }{@code >}
-	 * 
-	 */
-	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "dataQualityIndicators")
-	public JAXBElement<DataQualityIndicatorList> createDataQualityIndicators(
-			DataQualityIndicatorList value) {
-		return new JAXBElement<>(_DataQualityIndicators_QNAME,
-				DataQualityIndicatorList.class, null, value);
-	}
-
-	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataSetReference }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <} {@link Ref }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "referenceToConvertedOriginalDataSetFrom")
-	public JAXBElement<DataSetReference> createReferenceToConvertedOriginalDataSetFrom(
-			DataSetReference value) {
+	public JAXBElement<Ref> createReferenceToConvertedOriginalDataSetFrom(
+			Ref value) {
 		return new JAXBElement<>(
 				_ReferenceToConvertedOriginalDataSetFrom_QNAME,
-				DataSetReference.class, null, value);
+				Ref.class, null, value);
 	}
 
 	/**
@@ -299,12 +240,13 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link Label }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link Label
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "name")
-	public JAXBElement<Label> createName(Label value) {
-		return new JAXBElement<>(_Name_QNAME, Label.class, null, value);
+	public JAXBElement<LangString> createName(LangString value) {
+		return new JAXBElement<>(_Name_QNAME, LangString.class, null, value);
 	}
 
 	/**
@@ -313,8 +255,8 @@ public class ObjectFactory {
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "generalComment")
-	public JAXBElement<FreeText> createGeneralComment(FreeText value) {
-		return new JAXBElement<>(_GeneralComment_QNAME, FreeText.class, null,
+	public JAXBElement<LangString> createGeneralComment(LangString value) {
+		return new JAXBElement<>(_GeneralComment_QNAME, LangString.class, null,
 				value);
 	}
 
@@ -324,24 +266,24 @@ public class ObjectFactory {
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "synonyms")
-	public JAXBElement<FreeText> createSynonyms(FreeText value) {
-		return new JAXBElement<>(_Synonyms_QNAME, FreeText.class, null, value);
+	public JAXBElement<LangString> createSynonyms(LangString value) {
+		return new JAXBElement<>(_Synonyms_QNAME, LangString.class, null, value);
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataSetReference }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <} {@link Ref }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "referenceToRawDataDocumentation")
-	public JAXBElement<DataSetReference> createReferenceToRawDataDocumentation(
-			DataSetReference value) {
+	public JAXBElement<Ref> createReferenceToRawDataDocumentation(
+			Ref value) {
 		return new JAXBElement<>(_ReferenceToRawDataDocumentation_QNAME,
-				DataSetReference.class, null, value);
+				Ref.class, null, value);
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link String
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "UUID")
@@ -350,25 +292,15 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataSetReference }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <} {@link Ref }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "referenceToPersonOrEntityGeneratingTheDataSet")
-	public JAXBElement<DataSetReference> createReferenceToPersonOrEntityGeneratingTheDataSet(
-			DataSetReference value) {
+	public JAXBElement<Ref> createReferenceToPersonOrEntityGeneratingTheDataSet(
+			Ref value) {
 		return new JAXBElement<>(
 				_ReferenceToPersonOrEntityGeneratingTheDataSet_QNAME,
-				DataSetReference.class, null, value);
-	}
-
-	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link Wrapper }{@code >}
-	 * 
-	 */
-	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Wrapper", name = "ILCD")
-	public JAXBElement<Wrapper> createILCD(Wrapper value) {
-		return new JAXBElement<>(_ILCD_QNAME, Wrapper.class, null, value);
+				Ref.class, null, value);
 	}
 
 	/**
@@ -395,12 +327,13 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link Label }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link Label
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "shortName")
-	public JAXBElement<Label> createShortName(Label value) {
-		return new JAXBElement<>(_ShortName_QNAME, Label.class, null, value);
+	public JAXBElement<LangString> createShortName(LangString value) {
+		return new JAXBElement<>(_ShortName_QNAME, LangString.class, null, value);
 	}
 
 	/**
@@ -409,8 +342,8 @@ public class ObjectFactory {
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "accessRestrictions")
-	public JAXBElement<FreeText> createAccessRestrictions(FreeText value) {
-		return new JAXBElement<>(_AccessRestrictions_QNAME, FreeText.class,
+	public JAXBElement<LangString> createAccessRestrictions(LangString value) {
+		return new JAXBElement<>(_AccessRestrictions_QNAME, LangString.class,
 				null, value);
 	}
 
@@ -439,7 +372,8 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link String }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link String
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "registrationNumber")
@@ -460,7 +394,8 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link Boolean }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link Boolean
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "copyright")
@@ -469,15 +404,14 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}
-	 * {@link DataSetReference }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <} {@link Ref }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Common", name = "referenceToDataSetUseApproval")
-	public JAXBElement<DataSetReference> createReferenceToDataSetUseApproval(
-			DataSetReference value) {
+	public JAXBElement<Ref> createReferenceToDataSetUseApproval(
+			Ref value) {
 		return new JAXBElement<>(_ReferenceToDataSetUseApproval_QNAME,
-				DataSetReference.class, null, value);
+				Ref.class, null, value);
 	}
 
 }

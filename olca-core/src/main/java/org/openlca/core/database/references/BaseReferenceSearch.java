@@ -10,7 +10,6 @@ import java.util.Set;
 
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.ParameterDao;
-import org.openlca.core.database.references.Search.Ref;
 import org.openlca.core.model.AbstractEntity;
 import org.openlca.core.model.CategorizedEntity;
 import org.openlca.core.model.Parameter;
@@ -19,10 +18,13 @@ import org.openlca.core.model.descriptors.BaseDescriptor;
 import org.openlca.core.model.descriptors.CategorizedDescriptor;
 import org.openlca.core.model.descriptors.ParameterDescriptor;
 import org.openlca.util.Formula;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 		IReferenceSearch<T> {
 
+	private final static Logger log = LoggerFactory.getLogger(BaseReferenceSearch.class);
 	protected final IDatabase database;
 	private final Class<? extends CategorizedEntity> type;
 	private final boolean includeOptional;
@@ -37,6 +39,11 @@ abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 		this.database = database;
 		this.type = type;
 		this.includeOptional = includeOptional;
+	}
+
+	@Override
+	public List<Reference> findReferences() {
+		return findReferences(new HashSet<Long>());
 	}
 
 	@Override
@@ -60,26 +67,22 @@ abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 		return findReferences(Collections.singleton(id));
 	}
 
-	protected List<Reference> findReferences(String table, String idField,
-			Set<Long> ids, Ref[] references) {
+	protected List<Reference> findReferences(String table, String idField, Set<Long> ids, Ref[] references) {
 		return findReferences(table, idField, ids, null, references);
 	}
 
 	protected List<Reference> findReferences(String table, String idField,
 			Set<Long> ids, Map<Long, Long> idToOwnerId, Ref[] references) {
-		return Search.on(database, type).findReferences(table, idField, ids,
-				idToOwnerId, references, includeOptional);
+		return Search.on(database, type).findReferences(table, idField, ids, idToOwnerId, references, includeOptional);
 	}
 
 	protected List<Reference> findGlobalParameters(Set<Long> ids,
 			Map<Long, Set<String>> idToFormulas) {
-		if (ids.size() == 0)
-			return Collections.emptyList();
 		Map<Long, Set<String>> idToNames = new HashMap<>();
-		List<String> idLists = Search.asSqlLists(ids.toArray());
-		for (String idList : idLists) {
-			String paramQuery = "SELECT f_owner, lower(name), is_input_param, lower(formula) FROM tbl_parameters "
-					+ "WHERE f_owner IN (" + idList + ")";
+		List<String> queries = Search.createQueries(
+				"SELECT f_owner, lower(name), is_input_param, lower(formula) FROM tbl_parameters",
+				"WHERE f_owner IN", ids);
+		for (String paramQuery : queries) {
 			Search.on(database, type).query(paramQuery, (result) -> {
 				long ownerId = result.getLong(1);
 				Set<String> names = idToNames.get(ownerId);
@@ -100,28 +103,24 @@ abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 		for (Set<String> n : undeclared.values())
 			names.addAll(n);
 		List<ParameterDescriptor> descriptors = new ParameterDao(database)
-				.getDescriptors(names.toArray(new String[names.size()]),
-						ParameterScope.GLOBAL);
-		List<Reference> results = toReferences(descriptors, false, undeclared,
-				null);
+				.getDescriptors(names.toArray(new String[names.size()]), ParameterScope.GLOBAL);
+		List<Reference> results = toReferences(descriptors, false, undeclared, null);
 		Set<String> found = new HashSet<>();
 		for (ParameterDescriptor d : descriptors)
-			found.add(d.getName());
+			found.add(d.getName().toLowerCase());
 		for (String name : names)
-			if (!found.contains(name)) {
-				Reference ref = createMissingReference(name, undeclared);
-				if (ref != null)
-					results.add(ref);
-			}
+			if (!found.contains(name))
+				results.addAll(createMissingReferences(name, undeclared));
 		return results;
 	}
 
-	private Reference createMissingReference(String name,
+	private List<Reference> createMissingReferences(String name,
 			Map<Long, Set<String>> ownerToNames) {
+		List<Reference> missing = new ArrayList<>();
 		for (long ownerId : ownerToNames.keySet())
 			if (ownerToNames.get(ownerId).contains(name))
-				return new Reference("", Parameter.class, 0, type, ownerId);
-		return null;
+				missing.add(new Reference(name, Parameter.class, 0, type, ownerId));
+		return missing;
 	}
 
 	protected Map<Long, Set<String>> findUndeclaredParameters(
@@ -131,14 +130,18 @@ abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 		for (long id : idToFormulas.keySet()) {
 			Set<String> formulas = idToFormulas.get(id);
 			for (String formula : formulas) {
-				for (String var : Formula.getVariables(formula)) {
-					Set<String> set = idToNames.get(id);
-					if (set != null && set.contains(var))
-						continue;
-					Set<String> names = undeclared.get(id);
-					if (names == null)
-						undeclared.put(id, names = new HashSet<>());
-					names.add(var);
+				try {
+					for (String var : Formula.getVariables(formula)) {
+						Set<String> set = idToNames.get(id);
+						if (set != null && set.contains(var))
+							continue;
+						Set<String> names = undeclared.get(id);
+						if (names == null)
+							undeclared.put(id, names = new HashSet<>());
+						names.add(var);
+					}
+				} catch (Throwable e) {
+					log.warn("Failed parsing formula " + formula + " in model " + id, e);
 				}
 			}
 		}
@@ -151,14 +154,12 @@ abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 
 	protected List<Reference> findGlobalParameterRedefs(Set<Long> ids,
 			Map<Long, Long> idToOwnerId) {
-		if (ids.size() == 0)
-			return Collections.emptyList();
 		Map<Long, Set<String>> idToNames = new HashMap<>();
-		List<String> idLists = Search.asSqlLists(ids.toArray());
-		for (String idList : idLists) {
-			String query = "SELECT f_owner, name FROM tbl_parameter_redefs "
-					+ "WHERE (f_context is null OR f_context = 0) AND f_owner IN ("
-					+ idList + ")";
+		List<String> queries = Search.createQueries(
+				"SELECT f_owner, name FROM tbl_parameter_redefs WHERE (f_context is null OR f_context = 0)",
+				"AND f_owner IN"
+				, ids);
+		for (String query : queries) {
 			Search.on(database, type).query(query, (result) -> {
 				long ownerId = result.getLong(1);
 				if (idToOwnerId != null)
@@ -220,12 +221,14 @@ abstract class BaseReferenceSearch<T extends CategorizedDescriptor> implements
 		}
 		List<Reference> references = new ArrayList<>();
 		for (BaseDescriptor descriptor : descriptors) {
-			for (long ownerId : descriptorToOwnerIds.get(descriptor.getId())) {
+			Set<Long> set = descriptorToOwnerIds.get(descriptor.getId());
+			if (set == null)
+				continue;
+			for (long ownerId : set) {
 				Class<? extends AbstractEntity> type = (Class<? extends AbstractEntity>) descriptor
 						.getModelType().getModelClass();
 				long id = descriptor.getId();
-				Reference reference = new Reference(property, type, id,
-						this.type, ownerId, optional);
+				Reference reference = new Reference(property, type, id, this.type, ownerId, optional);
 				references.add(reference);
 			}
 		}

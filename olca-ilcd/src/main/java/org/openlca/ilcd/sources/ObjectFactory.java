@@ -5,6 +5,9 @@ import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
 
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.Publication;
+
 /**
  * This object contains factory methods for each Java content interface and Java
  * element interface generated in the org.openlca.ilcd.sources package.
@@ -39,27 +42,27 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link DigitalFileReference }
+	 * Create an instance of {@link FileRef }
 	 * 
 	 */
-	public DigitalFileReference createDigitalFileReference() {
-		return new DigitalFileReference();
+	public FileRef createDigitalFileReference() {
+		return new FileRef();
 	}
 
 	/**
-	 * Create an instance of {@link SourceInformation }
+	 * Create an instance of {@link SourceInfo }
 	 * 
 	 */
-	public SourceInformation createSourceInformation() {
-		return new SourceInformation();
+	public SourceInfo createSourceInformation() {
+		return new SourceInfo();
 	}
 
 	/**
-	 * Create an instance of {@link DataSetInformation }
+	 * Create an instance of {@link DataSetInfo }
 	 * 
 	 */
-	public DataSetInformation createDataSetInformation() {
-		return new DataSetInformation();
+	public DataSetInfo createDataSetInformation() {
+		return new DataSetInfo();
 	}
 
 	/**
@@ -79,15 +82,16 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link AdministrativeInformation }
+	 * Create an instance of {@link AdminInfo }
 	 * 
 	 */
-	public AdministrativeInformation createAdministrativeInformation() {
-		return new AdministrativeInformation();
+	public AdminInfo createAdministrativeInformation() {
+		return new AdminInfo();
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link Source }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link Source
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Source", name = "sourceDataSet")

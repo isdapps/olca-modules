@@ -1,7 +1,6 @@
 package org.openlca.core.database.references;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -9,11 +8,11 @@ import java.util.Map;
 import java.util.Set;
 
 import org.openlca.core.database.IDatabase;
-import org.openlca.core.database.references.Search.Ref;
 import org.openlca.core.model.Actor;
 import org.openlca.core.model.CategorizedEntity;
 import org.openlca.core.model.Category;
 import org.openlca.core.model.Currency;
+import org.openlca.core.model.DQSystem;
 import org.openlca.core.model.Exchange;
 import org.openlca.core.model.Flow;
 import org.openlca.core.model.FlowPropertyFactor;
@@ -33,6 +32,9 @@ public class ProcessReferenceSearch extends
 			new Ref(Category.class, "category", "f_category", true),
 			new Ref(Location.class, "location", "f_location", true),
 			new Ref(Currency.class, "currency", "f_currency", true),
+			new Ref(DQSystem.class, "dqSystem", "f_dq_system", true),
+			new Ref(DQSystem.class, "exchangeDqSystem", "f_exchange_dq_system", true),
+			new Ref(DQSystem.class, "socialDqSystem", "f_social_dq_system", true),
 			new Ref(ProcessDocumentation.class, "documentation", "f_process_doc", true)
 	};
 	private final static Ref[] exchangeReferences = {
@@ -40,10 +42,10 @@ public class ProcessReferenceSearch extends
 			new Ref(FlowPropertyFactor.class, "flowPropertyFactor", Exchange.class, "exchanges",
 					"f_flow_property_factor"),
 			new Ref(Unit.class, "unit", Exchange.class, "exchanges", "f_unit"),
-			new Ref(Process.class, "defaultProviderId", Exchange.class, "exchanges", "f_default_provider", true)
+			new Ref(Process.class, "defaultProviderId", Exchange.class, "exchanges", "f_default_provider", true, true)
 	};
 	private final static Ref[] socialAspectReferences = {
-			new Ref(SocialIndicator.class, "indicator", SocialAspect.class, "socialAspects", "f_indicator", true),
+			new Ref(SocialIndicator.class, "indicator", SocialAspect.class, "socialAspects", "f_indicator", false),
 			new Ref(Source.class, "source", SocialAspect.class, "socialAspects", "f_source", true)
 	};
 	private final static Ref[] documentationReferences = {
@@ -85,7 +87,7 @@ public class ProcessReferenceSearch extends
 
 	private List<Reference> findSocialAspectReferences(Set<Long> ids) {
 		Map<Long, Long> aspects = toIdMap(findReferences("tbl_social_aspects",
-				"f_process", ids, new Ref[] { new Ref(Exchange.class, "id", "id") }));
+				"f_process", ids, new Ref[] { new Ref(SocialAspect.class, "id", "id") }));
 		return findReferences("tbl_social_aspects", "id", aspects.keySet(),
 				aspects, socialAspectReferences);
 	}
@@ -100,13 +102,11 @@ public class ProcessReferenceSearch extends
 	}
 
 	private Map<Long, Set<String>> getExchangeFormulas(Set<Long> ids) {
-		if (ids.isEmpty())
-			return Collections.emptyMap();
-		String subquery = "SELECT f_owner, lower(resulting_amount_formula) FROM tbl_exchanges ";
-		List<String> idLists = Search.asSqlLists(ids.toArray());
+		List<String> queries = Search.createQueries(
+				"SELECT f_owner, lower(resulting_amount_formula) FROM tbl_exchanges"
+				, "WHERE f_owner IN", ids);
 		Map<Long, Set<String>> formulas = new HashMap<>();
-		for (String idList : idLists) {
-			String query = subquery + "WHERE f_owner IN (" + idList + ")";
+		for (String query : queries) {
 			Search.on(database, null).query(query.toString(), (result) -> {
 				long methodId = result.getLong(1);
 				Set<String> set = formulas.get(methodId);

@@ -1,12 +1,12 @@
 package org.openlca.core.matrix;
 
-import org.openlca.core.math.IMatrix;
-import org.openlca.core.math.IMatrixFactory;
-import org.openlca.expressions.FormulaInterpreter;
-
 import gnu.trove.impl.Constants;
 import gnu.trove.iterator.TIntObjectIterator;
 import gnu.trove.map.hash.TIntObjectHashMap;
+
+import org.openlca.core.matrix.format.IMatrix;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
+import org.openlca.expressions.FormulaInterpreter;
 
 public class ExchangeMatrix {
 
@@ -68,12 +68,12 @@ public class ExchangeMatrix {
 			return cell.getMatrixValue();
 	}
 
-	public <M extends IMatrix> M createRealMatrix(IMatrixFactory<M> factory) {
-		if(rows == 0 || columns == 0)
+	public IMatrix createRealMatrix(IMatrixSolver solver) {
+		if (rows == 0 || columns == 0)
 			return null;
-		M matrix = factory.create(rows, columns);
+		IMatrix matrix = solver.matrix(rows, columns);
 		iterate((row, col, cell) -> {
-			matrix.setEntry(row, col, cell.getMatrixValue());
+			matrix.set(row, col, cell.getMatrixValue());
 		});
 		return matrix;
 	}
@@ -86,13 +86,13 @@ public class ExchangeMatrix {
 
 	void apply(IMatrix matrix) {
 		iterate((row, col, cell) -> {
-			matrix.setEntry(row, col, cell.getMatrixValue());
+			matrix.set(row, col, cell.getMatrixValue());
 		});
 	}
 
 	void simulate(IMatrix matrix) {
 		iterate((row, col, cell) -> {
-			matrix.setEntry(row, col, cell.getNextSimulationValue());
+			matrix.set(row, col, cell.getNextSimulationValue());
 		});
 	}
 

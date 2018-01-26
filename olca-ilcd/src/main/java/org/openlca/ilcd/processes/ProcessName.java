@@ -6,219 +6,84 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAnyAttribute;
 import javax.xml.bind.annotation.XmlElement;
 import javax.xml.bind.annotation.XmlType;
 import javax.xml.namespace.QName;
-import org.openlca.ilcd.commons.Label;
+
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.commons.Other;
+import org.openlca.ilcd.commons.annotations.Label;
 
-
-/**
- * <p>Java class for NameType complex type.
- * 
- * <p>The following schema fragment specifies the expected content contained within this class.
- * 
- * <pre>
- * &lt;complexType name="NameType">
- *   &lt;complexContent>
- *     &lt;restriction base="{http://www.w3.org/2001/XMLSchema}anyType">
- *       &lt;sequence>
- *         &lt;element name="baseName" type="{http://lca.jrc.it/ILCD/Common}StringMultiLang" maxOccurs="100"/>
- *         &lt;element name="treatmentStandardsRoutes" type="{http://lca.jrc.it/ILCD/Common}StringMultiLang" maxOccurs="100" minOccurs="0"/>
- *         &lt;element name="mixAndLocationTypes" type="{http://lca.jrc.it/ILCD/Common}StringMultiLang" maxOccurs="100" minOccurs="0"/>
- *         &lt;element name="functionalUnitFlowProperties" type="{http://lca.jrc.it/ILCD/Common}StringMultiLang" maxOccurs="100" minOccurs="0"/>
- *         &lt;element ref="{http://lca.jrc.it/ILCD/Common}other" minOccurs="0"/>
- *       &lt;/sequence>
- *       &lt;anyAttribute processContents='lax' namespace='##other'/>
- *     &lt;/restriction>
- *   &lt;/complexContent>
- * &lt;/complexType>
- * </pre>
- * 
- * 
- */
 @XmlAccessorType(XmlAccessType.FIELD)
 @XmlType(name = "NameType", propOrder = {
-    "baseName",
-    "treatmentStandardsRoutes",
-    "mixAndLocationTypes",
-    "functionalUnitFlowProperties",
-    "other"
+		"name",
+		"technicalDetails",
+		"mixAndLocation",
+		"flowProperties",
+		"other"
 })
-public class ProcessName
-    implements Serializable
-{
+public class ProcessName implements Serializable {
 
-    private final static long serialVersionUID = 1L;
-    @XmlElement(required = true)
-    protected List<Label> baseName;
-    protected List<Label> treatmentStandardsRoutes;
-    protected List<Label> mixAndLocationTypes;
-    protected List<Label> functionalUnitFlowProperties;
-    @XmlElement(namespace = "http://lca.jrc.it/ILCD/Common")
-    protected Other other;
-    @XmlAnyAttribute
-    private Map<QName, String> otherAttributes =  new HashMap<>();
+	private final static long serialVersionUID = 1L;
 
-    /**
-     * Gets the value of the baseName property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the baseName property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getBaseName().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Label }
-     * 
-     * 
-     */
-    public List<Label> getBaseName() {
-        if (baseName == null) {
-            baseName = new ArrayList<>();
-        }
-        return this.baseName;
-    }
+	/**
+	 * General descriptive name of the process and/or its main good(s) or
+	 * service(s) and/or it's level of processing.
+	 */
+	@Label
+	@XmlElement(name = "baseName", required = true)
+	public final List<LangString> name = new ArrayList<>();
 
-    /**
-     * Gets the value of the treatmentStandardsRoutes property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the treatmentStandardsRoutes property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getTreatmentStandardsRoutes().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Label }
-     * 
-     * 
-     */
-    public List<Label> getTreatmentStandardsRoutes() {
-        if (treatmentStandardsRoutes == null) {
-            treatmentStandardsRoutes = new ArrayList<>();
-        }
-        return this.treatmentStandardsRoutes;
-    }
+	/**
+	 * Specifying information on the good, service, or process in technical
+	 * term(s): treatment received, standard fulfilled, product quality, use
+	 * information, production route name, educt name, primary / secondary etc.
+	 * Separated by commata.
+	 */
+	@Label
+	@XmlElement(name = "treatmentStandardsRoutes")
+	public final List<LangString> technicalDetails = new ArrayList<>();
 
-    /**
-     * Gets the value of the mixAndLocationTypes property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the mixAndLocationTypes property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getMixAndLocationTypes().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Label }
-     * 
-     * 
-     */
-    public List<Label> getMixAndLocationTypes() {
-        if (mixAndLocationTypes == null) {
-            mixAndLocationTypes = new ArrayList<>();
-        }
-        return this.mixAndLocationTypes;
-    }
+	/**
+	 * Specifying information on the good, service, or process whether being a
+	 * production mix or consumption mix, location type of availability (such as
+	 * e.g. "to consumer" or "at plant"). Separated by commata.
+	 */
+	@Label
+	@XmlElement(name = "mixAndLocationTypes")
+	public final List<LangString> mixAndLocation = new ArrayList<>();
 
-    /**
-     * Gets the value of the functionalUnitFlowProperties property.
-     * 
-     * <p>
-     * This accessor method returns a reference to the live list,
-     * not a snapshot. Therefore any modification you make to the
-     * returned list will be present inside the JAXB object.
-     * This is why there is not a <CODE>set</CODE> method for the functionalUnitFlowProperties property.
-     * 
-     * <p>
-     * For example, to add a new item, do as follows:
-     * <pre>
-     *    getFunctionalUnitFlowProperties().add(newItem);
-     * </pre>
-     * 
-     * 
-     * <p>
-     * Objects of the following type(s) are allowed in the list
-     * {@link Label }
-     * 
-     * 
-     */
-    public List<Label> getFunctionalUnitFlowProperties() {
-        if (functionalUnitFlowProperties == null) {
-            functionalUnitFlowProperties = new ArrayList<>();
-        }
-        return this.functionalUnitFlowProperties;
-    }
+	/**
+	 * Further, quantitative specifying information on the good, service or
+	 * process in technical term(s): qualifying constituent(s)-content and / or
+	 * energy-content per unit etc. as appropriate. Separated by commata. (Note:
+	 * non-qualifying flow properties, CAS No, Synonyms, Chemical formulas etc.
+	 * are documented exclusively in the "Flow data set".)
+	 */
+	@Label
+	@XmlElement(name = "functionalUnitFlowProperties")
+	public final List<LangString> flowProperties = new ArrayList<>();
 
-    /**
-     * Gets the value of the other property.
-     * 
-     * @return
-     *     possible object is
-     *     {@link Other }
-     *     
-     */
-    public Other getOther() {
-        return other;
-    }
+	@XmlElement(namespace = "http://lca.jrc.it/ILCD/Common")
+	public Other other;
 
-    /**
-     * Sets the value of the other property.
-     * 
-     * @param value
-     *     allowed object is
-     *     {@link Other }
-     *     
-     */
-    public void setOther(Other value) {
-        this.other = value;
-    }
+	@XmlAnyAttribute
+	public final Map<QName, String> otherAttributes = new HashMap<>();
 
-    /**
-     * Gets a map that contains attributes that aren't bound to any typed property on this class.
-     * 
-     * <p>
-     * the map is keyed by the name of the attribute and 
-     * the value is the string value of the attribute.
-     * 
-     * the map returned by this method is live, and you can add new attribute
-     * by updating the map directly. Because of this design, there's no setter.
-     * 
-     * 
-     * @return
-     *     always non-null
-     */
-    public Map<QName, String> getOtherAttributes() {
-        return otherAttributes;
-    }
-
+	@Override
+	public ProcessName clone() {
+		ProcessName clone = new ProcessName();
+		LangString.copy(name, clone.name);
+		LangString.copy(technicalDetails, clone.technicalDetails);
+		LangString.copy(mixAndLocation, clone.mixAndLocation);
+		LangString.copy(flowProperties, clone.flowProperties);
+		if (other != null)
+			clone.other = other.clone();
+		clone.otherAttributes.putAll(otherAttributes);
+		return clone;
+	}
 }

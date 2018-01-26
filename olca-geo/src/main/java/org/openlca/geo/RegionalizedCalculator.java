@@ -6,8 +6,6 @@ import java.util.function.BiConsumer;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.math.CalculationSetup;
 import org.openlca.core.math.DataStructures;
-import org.openlca.core.math.IMatrix;
-import org.openlca.core.math.IMatrixSolver;
 import org.openlca.core.math.LcaCalculator;
 import org.openlca.core.matrix.CostVector;
 import org.openlca.core.matrix.ImpactTable;
@@ -16,6 +14,8 @@ import org.openlca.core.matrix.InventoryMatrix;
 import org.openlca.core.matrix.LongPair;
 import org.openlca.core.matrix.ParameterTable;
 import org.openlca.core.matrix.cache.MatrixCache;
+import org.openlca.core.matrix.format.IMatrix;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
 import org.openlca.core.results.FullResult;
 import org.openlca.core.results.LinkContributions;
 import org.openlca.expressions.FormulaInterpreter;
@@ -52,7 +52,7 @@ public class RegionalizedCalculator {
 					.createParameterTable(regioSetup.database, setup, inventory);
 			FormulaInterpreter interpreter = parameterTable.createInterpreter();
 			InventoryMatrix m = inventory.createMatrix(
-					solver.getMatrixFactory(), interpreter);
+					solver, interpreter);
 			ImpactTable impactTable = ImpactTable.build(cache,
 					setup.impactMethod.getId(), inventory.flowIndex);
 
@@ -74,15 +74,15 @@ public class RegionalizedCalculator {
 
 			// assessed intervention matrix
 			IMatrix factors = impactTable.createMatrix(
-					solver.getMatrixFactory(), interpreter).factorMatrix;
+					solver, interpreter).factorMatrix;
 			r.impactFactors = factors;
 			IMatrix assessedEnvi = solver.multiply(factors, m.interventionMatrix);
 			eachKml(regioSetup, impactTable, interpreter, (kml, kmlFactors) -> {
 				IMatrix assessedKml = solver.multiply(kmlFactors, m.interventionMatrix);
 				for (LongPair product : kml.processProducts) {
 					int col = r.productIndex.getIndex(product);
-					for (int row = 0; row < assessedEnvi.getRowDimension(); row++) {
-						assessedEnvi.setEntry(row, col, assessedKml.getEntry(row, col));
+					for (int row = 0; row < assessedEnvi.rows(); row++) {
+						assessedEnvi.set(row, col, assessedKml.get(row, col));
 					}
 				}
 			});
@@ -116,10 +116,10 @@ public class RegionalizedCalculator {
 				r.singleCostResults = directCosts;
 
 				// upstream LCC
-				IMatrix costMatrix = costVector.asMatrix(solver.getMatrixFactory());
+				IMatrix costMatrix = costVector.asMatrix(solver);
 				IMatrix upstreamCosts = solver.multiply(costMatrix, inverse);
 				solver.scaleColumns(upstreamCosts, demands);
-				r.totalCostResult = upstreamCosts.getEntry(0, refIdx);
+				r.totalCostResult = upstreamCosts.get(0, refIdx);
 				r.upstreamCostResults = upstreamCosts;
 			}
 
@@ -143,8 +143,7 @@ public class RegionalizedCalculator {
 					continue;
 				scope.bind(param, val.toString());
 			}
-			IMatrix factors = table.createMatrix(solver.getMatrixFactory(),
-					interpreter).factorMatrix;
+			IMatrix factors = table.createMatrix(solver, interpreter).factorMatrix;
 			fn.accept(kml, factors);
 		}
 	}

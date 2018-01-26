@@ -5,6 +5,9 @@ import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
 
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.Publication;
+
 /**
  * This object contains factory methods for each Java content interface and Java
  * element interface generated in the org.openlca.ilcd.contacts package.
@@ -39,11 +42,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link DataSetInformation }
+	 * Create an instance of {@link DataSetInfo }
 	 * 
 	 */
-	public DataSetInformation createDataSetInformation() {
-		return new DataSetInformation();
+	public DataSetInfo createDataSetInformation() {
+		return new DataSetInfo();
 	}
 
 	/**
@@ -63,23 +66,24 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link ContactInformation }
+	 * Create an instance of {@link ContactInfo }
 	 * 
 	 */
-	public ContactInformation createContactInformation() {
-		return new ContactInformation();
+	public ContactInfo createContactInformation() {
+		return new ContactInfo();
 	}
 
 	/**
-	 * Create an instance of {@link AdministrativeInformation }
+	 * Create an instance of {@link AdminInfo }
 	 * 
 	 */
-	public AdministrativeInformation createAdministrativeInformation() {
-		return new AdministrativeInformation();
+	public AdminInfo createAdministrativeInformation() {
+		return new AdminInfo();
 	}
 
 	/**
-	 * Create an instance of {@link JAXBElement }{@code <}{@link Contact }{@code >}
+	 * Create an instance of {@link JAXBElement }{@code <}{@link Contact
+	 * }{@code >}
 	 * 
 	 */
 	@XmlElementDecl(namespace = "http://lca.jrc.it/ILCD/Contact", name = "contactDataSet")

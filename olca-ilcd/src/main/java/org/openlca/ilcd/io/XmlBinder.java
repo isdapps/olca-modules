@@ -14,6 +14,7 @@ import javax.xml.bind.JAXBElement;
 import javax.xml.bind.JAXBException;
 import javax.xml.bind.Marshaller;
 import javax.xml.bind.Unmarshaller;
+import javax.xml.namespace.QName;
 import javax.xml.transform.stream.StreamSource;
 
 import org.openlca.ilcd.contacts.Contact;
@@ -21,9 +22,9 @@ import org.openlca.ilcd.descriptors.DescriptorList;
 import org.openlca.ilcd.flowproperties.FlowProperty;
 import org.openlca.ilcd.flows.Flow;
 import org.openlca.ilcd.methods.LCIAMethod;
+import org.openlca.ilcd.models.Model;
 import org.openlca.ilcd.processes.ObjectFactory;
 import org.openlca.ilcd.processes.Process;
-import org.openlca.ilcd.productmodel.ProductModel;
 import org.openlca.ilcd.sources.Source;
 import org.openlca.ilcd.units.UnitGroup;
 
@@ -83,12 +84,7 @@ public class XmlBinder {
 	}
 
 	private Marshaller createMarshaller(Object ilcdObject) throws JAXBException {
-		JAXBContext context = null;
-		if (ilcdObject instanceof Process)
-			context = JAXBContext
-					.newInstance(Process.class, ProductModel.class);
-		else
-			context = JAXBContext.newInstance(ilcdObject.getClass());
+		JAXBContext context = JAXBContext.newInstance(ilcdObject.getClass());
 		Marshaller marshaller = context.createMarshaller();
 		marshaller.setProperty(Marshaller.JAXB_FORMATTED_OUTPUT, Boolean.TRUE);
 		return marshaller;
@@ -142,12 +138,7 @@ public class XmlBinder {
 
 	private Unmarshaller createUnmarshaller(Class<?> clazz)
 			throws JAXBException {
-		JAXBContext context = null;
-		if (clazz.equals(Process.class))
-			context = JAXBContext
-					.newInstance(Process.class, ProductModel.class);
-		else
-			context = JAXBContext.newInstance(clazz);
+		JAXBContext context = JAXBContext.newInstance(clazz);
 		Unmarshaller unmarshaller = context.createUnmarshaller();
 		return unmarshaller;
 	}
@@ -181,6 +172,10 @@ public class XmlBinder {
 		} else if (value instanceof DescriptorList) {
 			org.openlca.ilcd.descriptors.ObjectFactory fac = new org.openlca.ilcd.descriptors.ObjectFactory();
 			return fac.createDataSetList((DescriptorList) value);
+		} else if (value instanceof Model) {
+			QName qname = new QName("http://eplca.jrc.ec.europa.eu/ILCD/LifeCycleModel/2017",
+					"lifeCycleModelDataSet");
+			return new JAXBElement<>(qname, Model.class, null, (Model) value);
 		} else {
 			throw new IllegalArgumentException("Unsupported type " + value);
 		}

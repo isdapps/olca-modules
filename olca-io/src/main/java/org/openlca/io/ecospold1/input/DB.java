@@ -4,9 +4,10 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.apache.commons.lang3.StringUtils;
-import org.openlca.core.database.BaseEntityDao;
 import org.openlca.core.database.CategoryDao;
+import org.openlca.core.database.Daos;
 import org.openlca.core.database.IDatabase;
+import org.openlca.core.model.AbstractEntity;
 import org.openlca.core.model.Actor;
 import org.openlca.core.model.Category;
 import org.openlca.core.model.Flow;
@@ -164,10 +165,11 @@ class DB {
 		return entity;
 	}
 
+	@SuppressWarnings("unchecked")
 	public <T extends RootEntity> T get(Class<T> type, String id) {
 		try {
-			BaseEntityDao<T> dao = new BaseEntityDao<>(type, database);
-			return dao.getForRefId(id);
+			ModelType modelType = ModelType.forModelClass(type);
+			return (T) Daos.root(database, modelType).getForRefId(id);
 		} catch (Exception e) {
 			log.error("Failed to query database for " + type + " id=" + id, e);
 			return null;
@@ -175,12 +177,12 @@ class DB {
 	}
 
 	@SuppressWarnings({ "unchecked", "rawtypes" })
-	public <T> void put(T entity, String genKey) {
+	public <T extends AbstractEntity> void put(T entity, String genKey) {
 		if (entity == null)
 			return;
 		try {
 			Class<T> clazz = (Class<T>) entity.getClass();
-			database.createDao(clazz).insert(entity);
+			Daos.base(database, clazz).insert(entity);
 			Map cache = getCache(entity);
 			if (cache != null)
 				cache.put(genKey, entity);

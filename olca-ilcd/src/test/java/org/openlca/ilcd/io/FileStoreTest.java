@@ -7,6 +7,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 
 import java.io.File;
+import java.util.UUID;
 
 import org.junit.AfterClass;
 import org.junit.BeforeClass;
@@ -14,10 +15,10 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.openlca.ilcd.SampleSource;
 import org.openlca.ilcd.contacts.Contact;
-import org.openlca.ilcd.sources.DataSetInformation;
+import org.openlca.ilcd.sources.DataSetInfo;
 import org.openlca.ilcd.sources.Source;
+import org.openlca.ilcd.sources.SourceInfo;
 import org.openlca.ilcd.units.UnitGroup;
-import org.openlca.ilcd.util.IlcdConfig;
 import org.openlca.ilcd.util.UnitGroupBag;
 
 public class FileStoreTest {
@@ -53,17 +54,19 @@ public class FileStoreTest {
 		UnitGroup group = fileStore.get(UnitGroup.class,
 				"93a60a57-a4c8-11da-a746-0800200c9a66");
 		assertNotNull(group);
-		UnitGroupBag bag = new UnitGroupBag(group, IlcdConfig.getDefault());
+		UnitGroupBag bag = new UnitGroupBag(group, "en");
 		assertEquals("Units of mass", bag.getName());
 	}
 
 	@Test
 	public void testPut() throws Exception {
-		DataSetInformation dataSetInfo = new DataSetInformation();
-		String id = "110";
-		dataSetInfo.setUUID(id);
+		DataSetInfo dataSetInfo = new DataSetInfo();
+		String id = UUID.randomUUID().toString();
+		dataSetInfo.uuid = id;
 		Source source = SampleSource.create();
-		fileStore.put(source, id);
+		source.sourceInfo = new SourceInfo();
+		source.sourceInfo.dataSetInfo = dataSetInfo;
+		fileStore.put(source);
 		assertTrue(fileStore.contains(Source.class, id));
 	}
 

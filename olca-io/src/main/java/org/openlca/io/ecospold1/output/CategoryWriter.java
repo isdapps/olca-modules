@@ -7,7 +7,9 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Objects;
 import java.util.TreeSet;
+
 import javax.xml.bind.JAXB;
+
 import org.openlca.core.model.Exchange;
 import org.openlca.core.model.Flow;
 import org.openlca.core.model.FlowType;
@@ -32,7 +34,7 @@ class CategoryWriter implements Closeable {
 		if (process == null)
 			return;
 		for (Exchange exchange : process.getExchanges()) {
-			Flow flow = exchange.getFlow();
+			Flow flow = exchange.flow;
 			int type = getType(flow);
 			if (flow == null || type == -1)
 				continue;

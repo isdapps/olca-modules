@@ -5,9 +5,8 @@ import java.io.File;
 import org.openlca.core.database.IDatabase;
 import org.openlca.ilcd.io.DataStore;
 import org.openlca.ilcd.io.ZipStore;
-import org.openlca.ilcd.util.IlcdConfig;
 import org.openlca.io.maps.FlowMap;
-import org.openlca.io.maps.MapType;
+import org.openlca.io.maps.Maps;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +18,7 @@ public class ImportConfig {
 	public final IDatabase db;
 	public final FlowMap flowMap;
 	public boolean importFlows;
-	public IlcdConfig ilcdConfig = IlcdConfig.getDefault();
+	public String[] langs = { "en" };
 
 	public ImportConfig(File zip, IDatabase database) {
 		DataStore store = null;
@@ -30,13 +29,13 @@ public class ImportConfig {
 		}
 		this.store = store;
 		this.db = database;
-		this.flowMap = new FlowMap(MapType.ILCD_FLOW);
+		this.flowMap = new FlowMap(Maps.ILCD_FLOW_IMPORT, database);
 	}
 
 	public ImportConfig(DataStore store, IDatabase database) {
 		this.store = store;
 		this.db = database;
-		this.flowMap = new FlowMap(MapType.ILCD_FLOW);
+		this.flowMap = new FlowMap(Maps.ILCD_FLOW_IMPORT, database);
 	}
 
 }

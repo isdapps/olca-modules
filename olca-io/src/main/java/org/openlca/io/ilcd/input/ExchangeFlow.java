@@ -2,7 +2,7 @@ package org.openlca.io.ilcd.input;
 
 import org.openlca.core.database.FlowDao;
 import org.openlca.core.model.Flow;
-import org.openlca.ilcd.commons.DataSetReference;
+import org.openlca.ilcd.commons.Ref;
 import org.openlca.ilcd.processes.Exchange;
 import org.openlca.io.maps.FlowMapEntry;
 import org.slf4j.Logger;
@@ -35,13 +35,13 @@ class ExchangeFlow {
 
 	public void findOrImport(ImportConfig config) {
 		this.config = config;
-		DataSetReference ref = ilcdExchange.getFlow();
+		Ref ref = ilcdExchange.flow;
 		if (ref == null) {
 			log.warn("ILCD exchange without flow ID: {}", ilcdExchange);
 			return;
 		}
 		try {
-			this.flow = fetch(ref.getUuid());
+			this.flow = fetch(ref.uuid);
 		} catch (Exception e) {
 			log.error("failed to get flow ", e);
 		}
@@ -56,7 +56,7 @@ class ExchangeFlow {
 			return cache(uuid, flow);
 		flow = fetchFromFlowMap(uuid);
 		if (flow != null)
-			return flow; // do not cache mapped flows!
+			return flow; // do not cache mapped flows! -> TODO: but we should!
 		flow = fetchFromImport(uuid);
 		return cache(uuid, flow);
 	}
@@ -89,7 +89,7 @@ class ExchangeFlow {
 		FlowMapEntry e = config.flowMap.getEntry(flowId);
 		if (e == null)
 			return null;
-		String mappedID = e.getOpenlcaFlowKey();
+		String mappedID = e.openlcaFlowKey;
 		Flow f = fetchFromCache(mappedID);
 		if (f == null) {
 			f = fetchFromDatabase(mappedID);

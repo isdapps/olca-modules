@@ -1,5 +1,7 @@
 package org.openlca.io.xls.results;
 
+import java.util.List;
+
 import org.apache.poi.ss.usermodel.CellStyle;
 import org.apache.poi.ss.usermodel.Sheet;
 import org.openlca.core.matrix.FlowIndex;
@@ -11,8 +13,6 @@ import org.openlca.core.results.ProjectResultProvider;
 import org.openlca.io.CategoryPair;
 import org.openlca.io.DisplayValues;
 import org.openlca.io.xls.Excel;
-
-import java.util.List;
 
 class ProjectInventories {
 
@@ -33,9 +33,8 @@ class ProjectInventories {
 	}
 
 	private void run() {
-		List<ProjectVariant> variants = Utils
-				.sortVariants(result.getVariants());
-		List<FlowDescriptor> flows = Utils.sortFlows(result.getFlowDescriptors(), result.cache);
+		List<ProjectVariant> variants = Sort.variants(result.getVariants());
+		List<FlowDescriptor> flows = Sort.flows(result.getFlowDescriptors(), result.cache);
 		if (variants.isEmpty() || flows.isEmpty())
 			return;
 		int row = 1;

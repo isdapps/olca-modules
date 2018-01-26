@@ -29,6 +29,7 @@ import org.openlca.simapro.csv.model.process.ProductExchangeRow;
 import org.openlca.simapro.csv.model.process.ProductOutputRow;
 import org.openlca.simapro.csv.model.process.RefProductRow;
 import org.openlca.util.KeyGen;
+import org.openlca.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -124,12 +125,13 @@ class ProcessHandler {
 	}
 
 	private boolean isOutputProduct(Exchange e) {
-		return e != null && e.getFlow() != null
-				&& !e.isInput() && !e.isAvoidedProduct()
-				&& e.getFlow().getFlowType() == FlowType.PRODUCT_FLOW;
+		return e != null && e.flow != null
+				&& !e.isInput && !e.isAvoided
+				&& e.flow.getFlowType() == FlowType.PRODUCT_FLOW;
 	}
 
-	private void addFactor(AllocationMethod method, long productId, double value) {
+	private void addFactor(AllocationMethod method, long productId,
+			double value) {
 		AllocationFactor f = new AllocationFactor();
 		f.setAllocationType(method);
 		f.setValue(value);
@@ -179,8 +181,9 @@ class ProcessHandler {
 		Exchange e = initExchange(row, scope, flow);
 		if (e == null)
 			return null;
-		e.setInput(false);
+		e.isInput = false;
 		setUnit(e, row.getUnit());
+		e.internalId = process.drawNextInternalId();
 		process.getExchanges().add(e);
 		return e;
 	}
@@ -192,9 +195,10 @@ class ProcessHandler {
 				Exchange e = initExchange(row, scope, flow);
 				if (e == null)
 					continue;
-				e.setInput(true);
-				e.setAvoidedProduct(type == ProductType.AVOIDED_PRODUCTS);
+				e.isInput = true;
+				e.isAvoided = type == ProductType.AVOIDED_PRODUCTS;
 				setUnit(e, row.getUnit());
+				e.internalId = process.drawNextInternalId();
 				process.getExchanges().add(e);
 			}
 		}
@@ -220,7 +224,8 @@ class ProcessHandler {
 				}
 				if (e == null)
 					continue;
-				e.setInput(isInput);
+				e.isInput = isInput;
+				e.internalId = process.drawNextInternalId();
 				process.getExchanges().add(e);
 			}
 		}
@@ -233,13 +238,13 @@ class ProcessHandler {
 		if (e == null)
 			return null;
 		double f = mappedFlow.getFactor();
-		e.setAmountValue(f * e.getAmountValue());
-		if (e.getAmountFormula() != null) {
-			String formula = f + " * ( " + e.getAmountFormula() + " )";
-			e.setAmountFormula(formula);
+		e.amount = f * e.amount;
+		if (e.amountFormula != null) {
+			String formula = f + " * ( " + e.amountFormula + " )";
+			e.amountFormula = formula;
 		}
-		if (e.getUncertainty() != null) {
-			e.getUncertainty().scale(f);
+		if (e.uncertainty != null) {
+			e.uncertainty.scale(f);
 		}
 		return e;
 	}
@@ -252,28 +257,29 @@ class ProcessHandler {
 			return null;
 		}
 		Exchange e = new Exchange();
-		e.setFlow(flow);
+		final Flow flow1 = flow;
+		e.flow = flow1;
 		e.description = row.getComment();
 		setAmount(e, row.getAmount(), scopeId);
-		Uncertainty uncertainty = Uncertainties.get(e.getAmountValue(),
+		Uncertainty uncertainty = Uncertainties.get(e.amount,
 				row.getUncertaintyDistribution());
-		e.setUncertainty(uncertainty);
+		e.uncertainty = uncertainty;
 		return e;
 	}
 
 	/** Sets the exchange unit and flow property for the given SimaPro unit. */
 	private void setUnit(Exchange e, String unit) {
-		if (e == null || e.getFlow() == null)
+		if (e == null || e.flow == null)
 			return;
 		UnitMappingEntry entry = refData.getUnitMapping().getEntry(unit);
 		if (entry == null) {
 			log.error("unknown unit {}; could not set exchange unit", unit);
 			return;
 		}
-		Flow flow = e.getFlow();
-		e.setUnit(entry.getUnit());
-		FlowPropertyFactor factor = flow.getFactor(entry.getFlowProperty());
-		e.setFlowPropertyFactor(factor);
+		Flow flow = e.flow;
+		e.unit = entry.unit;
+		FlowPropertyFactor factor = flow.getFactor(entry.flowProperty);
+		e.flowPropertyFactor = factor;
 	}
 
 	/**
@@ -281,28 +287,32 @@ class ProcessHandler {
 	 * (used for mapped reference flows).
 	 */
 	private void setRefUnit(Exchange e) {
-		if (e == null || e.getFlow() == null)
+		if (e == null || e.flow == null)
 			return;
-		Flow f = e.getFlow();
+		Flow f = e.flow;
 		FlowPropertyFactor fac = f.getReferenceFactor();
 		if (fac == null || fac.getFlowProperty() == null)
 			return;
-		e.setFlowPropertyFactor(fac);
+		e.flowPropertyFactor = fac;
 		FlowProperty prop = fac.getFlowProperty();
 		UnitGroup group = prop.getUnitGroup();
 		if (group == null || group.getReferenceUnit() == null)
 			return;
-		e.setUnit(group.getReferenceUnit());
+		e.unit = group.getReferenceUnit();
 	}
 
-	private void setAmount(Exchange e, String amountText, long scope) {
+	private void setAmount(Exchange e, String amount, long scope) {
+		if (Strings.nullOrEmpty(amount)) {
+			e.amount = (double) 0;
+			return;
+		}
 		try {
-			double val = Double.parseDouble(amountText);
-			e.setAmountValue(val);
+			double val = Double.parseDouble(amount);
+			e.amount = val;
 		} catch (Exception ex) {
-			double val = parameterMapper.eval(amountText, scope);
-			e.setAmountValue(val);
-			e.setAmountFormula(amountText);
+			double val = parameterMapper.eval(amount, scope);
+			e.amount = val;
+			e.amountFormula = amount;
 		}
 	}
 

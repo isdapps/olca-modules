@@ -6,18 +6,17 @@ import java.util.UUID;
 import org.junit.Assume;
 import org.junit.Before;
 import org.junit.Test;
-import org.openlca.ilcd.io.NetworkClient;
-import org.openlca.ilcd.units.AdministrativeInformation;
-import org.openlca.ilcd.units.DataSetInformation;
-import org.openlca.ilcd.units.Publication;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.commons.Publication;
+import org.openlca.ilcd.io.SodaClient;
+import org.openlca.ilcd.units.AdminInfo;
+import org.openlca.ilcd.units.DataSetInfo;
 import org.openlca.ilcd.units.UnitGroup;
-import org.openlca.ilcd.units.UnitGroupInformation;
-import org.openlca.ilcd.util.IlcdConfig;
-import org.openlca.ilcd.util.LangString;
+import org.openlca.ilcd.units.UnitGroupInfo;
 
 public class NetworkPutUnitGroupTest {
 
-	private NetworkClient client;
+	private SodaClient client;
 
 	@Before
 	public void setUp() throws Exception {
@@ -30,27 +29,27 @@ public class NetworkPutUnitGroupTest {
 	public void testPutUnitGroup() throws Exception {
 		Assume.assumeTrue(Network.isAppAlive());
 		String id = UUID.randomUUID().toString();
-		UnitGroup unitgroup = new UnitGroup();
-		UnitGroupInformation info = new UnitGroupInformation();
-		unitgroup.setUnitGroupInformation(info);
-		info.setDataSetInformation(makeDataInfo(id));
-		unitgroup.setAdministrativeInformation(makeAdminInfo());
-		client.put(unitgroup, id);
+		UnitGroup ug = new UnitGroup();
+		UnitGroupInfo info = new UnitGroupInfo();
+		ug.unitGroupInfo = info;
+		info.dataSetInfo = makeDataInfo(id);
+		ug.adminInfo = makeAdminInfo();
+		client.put(ug);
 	}
 
-	private DataSetInformation makeDataInfo(String id) {
-		DataSetInformation info = new DataSetInformation();
+	private DataSetInfo makeDataInfo(String id) {
+		DataSetInfo info = new DataSetInfo();
 		String name = "xtest UnitGroup - " + new Random().nextInt(1000);
-		LangString.addLabel(info.getName(), name, IlcdConfig.getDefault());
-		info.setUUID(id);
+		LangString.set(info.name, name, "en");
+		info.uuid = id;
 		return info;
 	}
 
-	private AdministrativeInformation makeAdminInfo() {
-		AdministrativeInformation info = new AdministrativeInformation();
+	private AdminInfo makeAdminInfo() {
+		AdminInfo info = new AdminInfo();
 		Publication pub = new Publication();
-		info.setPublicationAndOwnership(pub);
-		pub.setDataSetVersion("01.00.000");
+		info.publication = pub;
+		pub.version = "01.00.000";
 		return info;
 	}
 }

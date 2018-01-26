@@ -9,10 +9,8 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openlca.ilcd.commons.Class;
-import org.openlca.ilcd.io.XmlBinder;
+import org.openlca.ilcd.commons.Category;
 import org.openlca.ilcd.sources.Source;
-import org.openlca.ilcd.util.IlcdConfig;
 import org.openlca.ilcd.util.SourceBag;
 
 public class SourceBagTest {
@@ -25,7 +23,7 @@ public class SourceBagTest {
 				"source.xml")) {
 			XmlBinder binder = new XmlBinder();
 			Source source = binder.fromStream(Source.class, stream);
-			bag = new SourceBag(source, IlcdConfig.getDefault());
+			bag = new SourceBag(source, "en");
 		}
 	}
 
@@ -38,7 +36,7 @@ public class SourceBagTest {
 	public void testGetShortName() {
 		assertEquals("IMA-Europe_Plastic_Clay_diagramme_"
 				+ "2c699413-f88b-4cb5-a56d-98cb4068472f.jpg", bag
-				.getShortName().trim());
+						.getShortName().trim());
 	}
 
 	@Test
@@ -53,9 +51,9 @@ public class SourceBagTest {
 
 	@Test
 	public void testGetSortedClasses() {
-		List<Class> classes = bag.getSortedClasses();
+		List<Category> classes = bag.getSortedClasses();
 		assertTrue(classes.size() == 1);
-		assertEquals("Images", classes.get(0).getValue());
+		assertEquals("Images", classes.get(0).value);
 	}
 
 }

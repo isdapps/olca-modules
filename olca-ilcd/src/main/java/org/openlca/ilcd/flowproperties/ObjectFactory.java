@@ -5,6 +5,9 @@ import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
 
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.Publication;
+
 /**
  * This object contains factory methods for each Java content interface and Java
  * element interface generated in the org.openlca.ilcd.flowproperties package.
@@ -47,11 +50,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link DataSetInformation }
+	 * Create an instance of {@link DataSetInfo }
 	 * 
 	 */
-	public DataSetInformation createDataSetInformation() {
-		return new DataSetInformation();
+	public DataSetInfo createDataSetInformation() {
+		return new DataSetInfo();
 	}
 
 	/**
@@ -63,11 +66,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link ModellingAndValidation }
+	 * Create an instance of {@link Modelling }
 	 * 
 	 */
-	public ModellingAndValidation createModellingAndValidation() {
-		return new ModellingAndValidation();
+	public Modelling createModellingAndValidation() {
+		return new Modelling();
 	}
 
 	/**
@@ -79,11 +82,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link FlowPropertyInformation }
+	 * Create an instance of {@link FlowPropertyInfo }
 	 * 
 	 */
-	public FlowPropertyInformation createFlowPropertyInformation() {
-		return new FlowPropertyInformation();
+	public FlowPropertyInfo createFlowPropertyInformation() {
+		return new FlowPropertyInfo();
 	}
 
 	/**
@@ -111,11 +114,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link AdministrativeInformation }
+	 * Create an instance of {@link AdminInfo }
 	 * 
 	 */
-	public AdministrativeInformation createAdministrativeInformation() {
-		return new AdministrativeInformation();
+	public AdminInfo createAdministrativeInformation() {
+		return new AdminInfo();
 	}
 
 	/**

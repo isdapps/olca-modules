@@ -7,7 +7,10 @@ import org.junit.Assert;
 import org.junit.Before;
 import org.junit.Test;
 import org.openlca.core.Tests;
+import org.openlca.core.database.FlowDao;
 import org.openlca.core.database.IDatabase;
+import org.openlca.core.database.ImpactMethodDao;
+import org.openlca.core.database.ProcessDao;
 import org.openlca.core.model.Exchange;
 import org.openlca.core.model.Flow;
 import org.openlca.core.model.ImpactCategory;
@@ -30,13 +33,13 @@ public class FlowUseSearchTest {
 	public void setup() {
 		flow = new Flow();
 		flow.setName("flow");
-		flow = database.createDao(Flow.class).insert(flow);
+		flow = new FlowDao(database).insert(flow);
 		search = IUseSearch.FACTORY.createFor(ModelType.FLOW, database);
 	}
 
 	@After
 	public void tearDown() {
-		database.createDao(Flow.class).delete(flow);
+		new FlowDao(database).delete(flow);
 	}
 
 	@Test
@@ -52,7 +55,7 @@ public class FlowUseSearchTest {
 		ImpactMethod method = createMethod();
 		List<CategorizedDescriptor> results = search.findUses(Descriptors
 				.toDescriptor(flow));
-		database.createDao(ImpactMethod.class).delete(method);
+		new ImpactMethodDao(database).delete(method);
 		BaseDescriptor expected = Descriptors.toDescriptor(method);
 		Assert.assertEquals(1, results.size());
 		Assert.assertEquals(expected, results.get(0));
@@ -62,11 +65,11 @@ public class FlowUseSearchTest {
 		ImpactMethod method = new ImpactMethod();
 		method.setName("method");
 		ImpactFactor iFactor = new ImpactFactor();
-		iFactor.setFlow(flow);
+		iFactor.flow = flow;
 		ImpactCategory category = new ImpactCategory();
-		category.getImpactFactors().add(iFactor);
-		method.getImpactCategories().add(category);
-		return database.createDao(ImpactMethod.class).insert(method);
+		category.impactFactors.add(iFactor);
+		method.impactCategories.add(category);
+		return new ImpactMethodDao(database).insert(method);
 	}
 
 	@Test
@@ -74,7 +77,7 @@ public class FlowUseSearchTest {
 		Process process = createProcess();
 		List<CategorizedDescriptor> results = search.findUses(Descriptors
 				.toDescriptor(flow));
-		database.createDao(Process.class).delete(process);
+		new ProcessDao(database).delete(process);
 		BaseDescriptor expected = Descriptors.toDescriptor(process);
 		Assert.assertEquals(1, results.size());
 		Assert.assertEquals(expected, results.get(0));
@@ -84,8 +87,9 @@ public class FlowUseSearchTest {
 		Process process = new Process();
 		process.setName("process");
 		Exchange exchange = new Exchange();
-		exchange.setFlow(flow);
+		final Flow flow1 = flow;
+		exchange.flow = flow1;
 		process.getExchanges().add(exchange);
-		return database.createDao(Process.class).insert(process);
+		return new ProcessDao(database).insert(process);
 	}
 }

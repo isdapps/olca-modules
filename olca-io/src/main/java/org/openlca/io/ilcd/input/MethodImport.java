@@ -1,5 +1,6 @@
 package org.openlca.io.ilcd.input;
 
+import java.util.Calendar;
 import java.util.List;
 import java.util.UUID;
 
@@ -16,13 +17,14 @@ import org.openlca.core.model.ImpactFactor;
 import org.openlca.core.model.ImpactMethod;
 import org.openlca.core.model.Unit;
 import org.openlca.core.model.UnitGroup;
-import org.openlca.ilcd.methods.DataSetInformation;
+import org.openlca.core.model.Version;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.methods.DataSetInfo;
 import org.openlca.ilcd.methods.Factor;
 import org.openlca.ilcd.methods.FactorList;
 import org.openlca.ilcd.methods.LCIAMethod;
-import org.openlca.ilcd.methods.LCIAMethodInformation;
+import org.openlca.ilcd.methods.MethodInfo;
 import org.openlca.ilcd.methods.QuantitativeReference;
-import org.openlca.ilcd.util.LangString;
 import org.openlca.io.maps.FlowMapEntry;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,11 +81,11 @@ public class MethodImport {
 	}
 
 	private String getCategoryName(LCIAMethod iMethod) {
-		LCIAMethodInformation info = iMethod.getLCIAMethodInformation();
-		if (info == null || info.getDataSetInformation() == null)
+		MethodInfo info = iMethod.methodInfo;
+		if (info == null || info.dataSetInfo == null)
 			return null;
-		DataSetInformation dataInfo = info.getDataSetInformation();
-		List<String> categoryNames = dataInfo.getImpactCategory();
+		DataSetInfo dataInfo = info.dataSetInfo;
+		List<String> categoryNames = dataInfo.impactCategories;
 		if (categoryNames == null || categoryNames.isEmpty())
 			return null;
 		return categoryNames.get(0);
@@ -91,7 +93,7 @@ public class MethodImport {
 
 	private boolean hasCategory(org.openlca.core.model.ImpactMethod oMethod,
 			String categoryName) {
-		for (ImpactCategory category : oMethod.getImpactCategories()) {
+		for (ImpactCategory category : oMethod.impactCategories) {
 			if (StringUtils.equalsIgnoreCase(category.getName(), categoryName))
 				return true;
 		}
@@ -106,32 +108,34 @@ public class MethodImport {
 		String refId = getUUID(iMethod);
 		category.setRefId(refId != null ? refId : UUID.randomUUID().toString());
 		category.setName(categoryName);
-		category.setReferenceUnit(categoryUnit);
+		category.referenceUnit = categoryUnit;
 		category.setDescription(getCategoryDescription(iMethod));
 		addFactors(iMethod, category);
-		oMethod.getImpactCategories().add(category);
+		oMethod.impactCategories.add(category);
+		oMethod.setLastChange(Calendar.getInstance().getTimeInMillis());
+		Version.incUpdate(oMethod);
 		dao.update(oMethod);
 	}
 
 	private String getUUID(LCIAMethod iMethod) {
-		LCIAMethodInformation info = iMethod.getLCIAMethodInformation();
-		if (info == null || info.getDataSetInformation() == null)
+		MethodInfo info = iMethod.methodInfo;
+		if (info == null || info.dataSetInfo == null)
 			return null;
-		DataSetInformation dataInfo = info.getDataSetInformation();
-		return dataInfo.getUUID();
+		DataSetInfo dataInfo = info.dataSetInfo;
+		return dataInfo.uuid;
 	}
 
 	private String getCategoryUnit(LCIAMethod iMethod) {
 		String extensionUnit = getExtentionUnit(iMethod);
 		if (extensionUnit != null)
 			return extensionUnit;
-		LCIAMethodInformation info = iMethod.getLCIAMethodInformation();
-		if (info == null || info.getQuantitativeReference() == null)
+		MethodInfo info = iMethod.methodInfo;
+		if (info == null || info.quantitativeReference == null)
 			return null;
-		QuantitativeReference qRef = info.getQuantitativeReference();
-		if (qRef.getReferenceQuantity() == null)
+		QuantitativeReference qRef = info.quantitativeReference;
+		if (qRef.quantity == null)
 			return null;
-		String propertyId = qRef.getReferenceQuantity().getUuid();
+		String propertyId = qRef.quantity.uuid;
 		if (propertyId == null)
 			return null;
 		Unit unit = getReferenceUnit(propertyId);
@@ -139,21 +143,21 @@ public class MethodImport {
 	}
 
 	private String getExtentionUnit(LCIAMethod iMethod) {
-		LCIAMethodInformation info = iMethod.getLCIAMethodInformation();
-		if (info == null || info.getDataSetInformation() == null)
+		MethodInfo info = iMethod.methodInfo;
+		if (info == null || info.dataSetInfo == null)
 			return null;
-		DataSetInformation dataInfo = info.getDataSetInformation();
+		DataSetInfo dataInfo = info.dataSetInfo;
 		QName extName = new QName("http://openlca.org/ilcd-extensions",
 				"olca_category_unit");
-		return dataInfo.getOtherAttributes().get(extName);
+		return dataInfo.otherAttributes.get(extName);
 	}
 
 	private String getCategoryDescription(LCIAMethod iMethod) {
-		LCIAMethodInformation info = iMethod.getLCIAMethodInformation();
-		if (info == null || info.getDataSetInformation() == null)
+		MethodInfo info = iMethod.methodInfo;
+		if (info == null || info.dataSetInfo == null)
 			return null;
-		return LangString.get(info.getDataSetInformation().getGeneralComment(),
-				config.ilcdConfig);
+		return LangString.getFirst(info.dataSetInfo.comment,
+				config.langs);
 	}
 
 	private Unit getReferenceUnit(String propertyId) {
@@ -176,10 +180,10 @@ public class MethodImport {
 	}
 
 	private void addFactors(LCIAMethod iMethod, ImpactCategory category) {
-		FactorList list = iMethod.getCharacterisationFactors();
+		FactorList list = iMethod.characterisationFactors;
 		if (list == null)
 			return;
-		for (Factor factor : list.getFactor()) {
+		for (Factor factor : list.factors) {
 			try {
 				addFactor(category, factor);
 			} catch (Exception e) {
@@ -190,18 +194,18 @@ public class MethodImport {
 
 	private void addFactor(ImpactCategory category, Factor factor)
 			throws Exception {
-		String flowId = factor.getReferenceToFlowDataSet().getUuid();
+		String flowId = factor.flow.uuid;
 		Flow flow = getFlow(flowId);
 		if (flow == null) {
 			log.warn("Could not import flow {}", flowId);
 			return;
 		}
 		ImpactFactor oFactor = new ImpactFactor();
-		oFactor.setFlow(flow);
-		oFactor.setFlowPropertyFactor(flow.getReferenceFactor());
-		oFactor.setUnit(getRefUnit(flow));
-		oFactor.setValue(factor.getMeanValue());
-		category.getImpactFactors().add(oFactor);
+		oFactor.flow = flow;
+		oFactor.flowPropertyFactor = flow.getReferenceFactor();
+		oFactor.unit = getRefUnit(flow);
+		oFactor.value = factor.meanValue;
+		category.impactFactors.add(oFactor);
 	}
 
 	private Flow getFlow(String flowId) throws Exception {
@@ -216,7 +220,7 @@ public class MethodImport {
 		if (entry == null)
 			return null;
 		FlowDao dao = new FlowDao(config.db);
-		return dao.getForRefId(entry.getOpenlcaFlowKey());
+		return dao.getForRefId(entry.openlcaFlowKey);
 	}
 
 	private Unit getRefUnit(Flow flow) {

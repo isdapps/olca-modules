@@ -1,6 +1,5 @@
 package org.openlca.io.ilcd.input;
 
-import java.math.BigInteger;
 import java.util.Date;
 import java.util.List;
 
@@ -13,10 +12,11 @@ import org.openlca.core.model.FlowType;
 import org.openlca.core.model.Location;
 import org.openlca.core.model.ModelType;
 import org.openlca.core.model.Version;
-import org.openlca.ilcd.commons.DataSetReference;
-import org.openlca.ilcd.flows.FlowPropertyReference;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.commons.Ref;
+import org.openlca.ilcd.flows.FlowPropertyRef;
 import org.openlca.ilcd.util.FlowBag;
-import org.openlca.ilcd.util.LangString;
+import org.openlca.ilcd.util.Flows;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,7 +33,7 @@ public class FlowImport {
 	}
 
 	public Flow run(org.openlca.ilcd.flows.Flow flow) throws ImportException {
-		this.ilcdFlow = new FlowBag(flow, config.ilcdConfig);
+		this.ilcdFlow = new FlowBag(flow, config.langs);
 		Flow oFlow = findExisting(ilcdFlow.getId());
 		if (oFlow != null)
 			return oFlow;
@@ -45,7 +45,7 @@ public class FlowImport {
 		if (flow != null)
 			return flow;
 		org.openlca.ilcd.flows.Flow iFlow = tryGetFlow(flowId);
-		ilcdFlow = new FlowBag(iFlow, config.ilcdConfig);
+		ilcdFlow = new FlowBag(iFlow, config.langs);
 		return createNew();
 	}
 
@@ -127,23 +127,23 @@ public class FlowImport {
 	private void mapLocation() {
 		if (ilcdFlow == null || flow == null)
 			return;
-		String code = LangString.get(ilcdFlow.getLocation(), config.ilcdConfig);
+		String code = LangString.getFirst(ilcdFlow.getLocation(), config.langs);
 		Location location = Locations.get(code, config);
 		flow.setLocation(location);
 	}
 
 	private void addFlowProperties() {
 		Integer refPropertyId = ilcdFlow.getReferenceFlowPropertyId();
-		List<FlowPropertyReference> refs = ilcdFlow.getFlowPropertyReferences();
-		for (FlowPropertyReference ref : refs) {
+		List<FlowPropertyRef> refs = Flows.getFlowProperties(ilcdFlow.getValue());
+		for (FlowPropertyRef ref : refs) {
 			FlowProperty property = importProperty(ref);
 			if (property == null)
 				continue;
 			FlowPropertyFactor factor = new FlowPropertyFactor();
 			factor.setFlowProperty(property);
-			factor.setConversionFactor(ref.getMeanValue());
+			factor.setConversionFactor(ref.meanValue);
 			flow.getFlowPropertyFactors().add(factor);
-			BigInteger propId = ref.getDataSetInternalID();
+			Integer propId = ref.dataSetInternalID;
 			if (refPropertyId == null || propId == null)
 				continue;
 			if (refPropertyId.intValue() == propId.intValue())
@@ -151,14 +151,14 @@ public class FlowImport {
 		}
 	}
 
-	private FlowProperty importProperty(FlowPropertyReference ref) {
+	private FlowProperty importProperty(FlowPropertyRef ref) {
 		if (ref == null)
 			return null;
 		try {
 			FlowPropertyImport propImport = new FlowPropertyImport(config);
-			return propImport.run(ref.getFlowProperty().getUuid());
+			return propImport.run(ref.flowProperty.uuid);
 		} catch (Exception e) {
-			log.warn("failed to get flow property " + ref.getFlowProperty(), e);
+			log.warn("failed to get flow property " + ref.flowProperty, e);
 			return null;
 		}
 	}
@@ -186,33 +186,33 @@ public class FlowImport {
 
 	private void validateInput() throws ImportException {
 		Integer internalId = ilcdFlow.getReferenceFlowPropertyId();
-		DataSetReference propRef = null;
-		for (FlowPropertyReference prop : ilcdFlow.getFlowPropertyReferences()) {
-			BigInteger propId = prop.getDataSetInternalID();
+		Ref propRef = null;
+		for (FlowPropertyRef prop : Flows.getFlowProperties(ilcdFlow.getValue())) {
+			Integer propId = prop.dataSetInternalID;
 			if (propId == null || internalId == null)
 				continue;
 			if (propId.intValue() == internalId.intValue()) {
-				propRef = prop.getFlowProperty();
+				propRef = prop.flowProperty;
 				break;
 			}
 		}
 		if (internalId == null || propRef == null) {
 			String message = "Invalid flow data set: no ref. flow property, flow "
-					+ flow.getRefId();
+					+ ilcdFlow.getId();
 			throw new ImportException(message);
 		}
-		if (propRef.getUri() != null) {
-			if (!propRef.getUri().contains(propRef.getUuid())) {
+		if (propRef.uri != null) {
+			if (!propRef.uri.contains(propRef.uuid)) {
 				String message = "Flow data set {} -> reference to flow"
 						+ " property {}: the UUID is not contained in the URI";
-				log.warn(message, ilcdFlow.getId(), propRef.getUuid());
+				log.warn(message, ilcdFlow.getId(), propRef.uuid);
 			}
 		}
 	}
 
 	private void saveInDatabase(Flow obj) throws ImportException {
 		try {
-			config.db.createDao(Flow.class).insert(obj);
+			new FlowDao(config.db).insert(obj);
 		} catch (Exception e) {
 			String message = String.format("Save operation failed in flow %s.",
 					flow.getRefId());

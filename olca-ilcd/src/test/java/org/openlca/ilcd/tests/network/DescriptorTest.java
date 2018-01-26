@@ -8,10 +8,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openlca.ilcd.descriptors.DescriptorList;
 import org.openlca.ilcd.descriptors.UnitGroupDescriptor;
-import org.openlca.ilcd.io.NetworkClient;
+import org.openlca.ilcd.io.SodaClient;
 import org.openlca.ilcd.io.XmlBinder;
 import org.openlca.ilcd.units.UnitGroup;
-import org.openlca.ilcd.util.IlcdConfig;
 import org.openlca.ilcd.util.UnitGroupBag;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -29,15 +28,14 @@ public class DescriptorTest {
 	public void setUp() throws Exception {
 		if (!Network.isAppAlive())
 			return;
-		NetworkClient client = Network.createClient();
+		SodaClient client = Network.createClient();
 		XmlBinder binder = new XmlBinder();
 		UnitGroup group = binder.fromStream(UnitGroup.class, getClass()
 				.getResourceAsStream("unit.xml"));
-		UnitGroupBag bag = new UnitGroupBag(group, IlcdConfig.getDefault());
+		UnitGroupBag bag = new UnitGroupBag(group, "en");
 		if (client.contains(UnitGroup.class, bag.getId()))
 			return;
-		client.put(group, group.getUnitGroupInformation()
-				.getDataSetInformation().getUUID());
+		client.put(group);
 	}
 
 	@Test
@@ -47,25 +45,24 @@ public class DescriptorTest {
 		log.trace("Get unit groups: {}", unitUrl);
 		DescriptorList result = client.resource(unitUrl).get(
 				DescriptorList.class);
-		assertTrue(result.getDescriptors().size() > 0);
+		assertTrue(result.descriptors.size() > 0);
 		iterateAndCompareFirst(result);
 	}
 
 	private void iterateAndCompareFirst(DescriptorList result) {
-		for (Object obj : result.getDescriptors()) {
+		for (Object obj : result.descriptors) {
 			assertTrue(obj instanceof UnitGroupDescriptor);
 			UnitGroupDescriptor descriptor = (UnitGroupDescriptor) obj;
-			log.trace("Unit group '{}' found.", descriptor.getName().getValue());
+			log.trace("Unit group '{}' found.", descriptor.uuid);
 		}
-		UnitGroupDescriptor descriptorFromList = (UnitGroupDescriptor) result
-				.getDescriptors().get(0);
+		UnitGroupDescriptor descriptorFromList = (UnitGroupDescriptor) result.descriptors.get(0);
 		compareFirst(descriptorFromList);
 		loadFull(descriptorFromList);
 	}
 
 	private void compareFirst(UnitGroupDescriptor descriptorFromList) {
 		WebResource resource = client.resource(unitUrl)
-				.path(descriptorFromList.getUuid())
+				.path(descriptorFromList.uuid)
 				.queryParam("view", "overview");
 		log.trace("Get unit group descriptor: {}", resource.getURI());
 		UnitGroupDescriptor descriptor = resource
@@ -75,20 +72,18 @@ public class DescriptorTest {
 
 	private void compareDescriptors(UnitGroupDescriptor expected,
 			UnitGroupDescriptor actual) {
-		assertEquals(expected.getName().getValue(), actual.getName().getValue());
-		assertEquals(expected.getUuid(), actual.getUuid());
+		assertEquals(expected.name.get(0), actual.name.get(0));
+		assertEquals(expected.uuid, actual.uuid);
 	}
 
 	private void loadFull(UnitGroupDescriptor descriptor) {
 		WebResource resource = client.resource(unitUrl)
-				.path(descriptor.getUuid()).queryParam("format", "xml");
+				.path(descriptor.uuid).queryParam("format", "xml");
 		log.trace("Get full unit group: {}", resource.getURI());
 		UnitGroup unitGroup = resource.get(UnitGroup.class);
-		assertEquals(descriptor.getName().getValue(), unitGroup
-				.getUnitGroupInformation().getDataSetInformation().getName()
-				.get(0).getValue());
-		assertEquals(descriptor.getUuid(), unitGroup.getUnitGroupInformation()
-				.getDataSetInformation().getUUID());
+		assertEquals(descriptor.name.get(0), unitGroup.unitGroupInfo.dataSetInfo.name
+				.get(0).value);
+		assertEquals(descriptor.uuid, unitGroup.unitGroupInfo.dataSetInfo.uuid);
 	}
 
 }

@@ -13,27 +13,27 @@ import com.google.gson.JsonObject;
 
 class Exchanges {
 
-	static ExchangeWithId map(JsonObject json, ImportConfig conf) {
+	static Exchange map(JsonObject json, ImportConfig conf) {
 		Exchange e = new Exchange();
 		addAttributes(json, e);
 		addProvider(json, e, conf);
 		addCostEntries(json, e, conf);
 		addExchangeRefs(json, e, conf);
-		String internalId = In.getString(json, "@id");
-		return new ExchangeWithId(internalId, e);
+		return e;
 	}
 
 	private static void addAttributes(JsonObject json, Exchange e) {
-		e.setAvoidedProduct(In.getBool(json, "avoidedProduct", false));
-		e.setInput(In.getBool(json, "input", false));
-		e.setBaseUncertainty(In.getOptionalDouble(json, "baseUncertainty"));
-		e.setAmountValue(In.getDouble(json, "amount", 0));
-		e.setAmountFormula(In.getString(json, "amountFormula"));
-		e.setPedigreeUncertainty(In.getString(json, "pedigreeUncertainty"));
+		e.isAvoided = In.getBool(json, "avoidedProduct", false);
+		e.isInput = In.getBool(json, "input", false);
+		e.baseUncertainty = In.getOptionalDouble(json, "baseUncertainty");
+		e.amount = In.getDouble(json, "amount", 0);
+		e.amountFormula = In.getString(json, "amountFormula");
+		e.dqEntry = In.getString(json, "dqEntry");
 		e.description = In.getString(json, "description");
+		e.internalId = In.getInt(json, "internalId", 0);
 		JsonElement u = json.get("uncertainty");
 		if (u != null && u.isJsonObject()) {
-			e.setUncertainty(Uncertainties.read(u.getAsJsonObject()));
+			e.uncertainty = Uncertainties.read(u.getAsJsonObject());
 		}
 	}
 
@@ -44,13 +44,13 @@ class Exchanges {
 		Process provider = ProcessImport.run(providerId, conf);
 		if (provider == null)
 			return;
-		e.setDefaultProviderId(provider.getId());
+		e.defaultProviderId = provider.getId();
 	}
 
 	private static void addCostEntries(JsonObject json, Exchange e,
 			ImportConfig conf) {
 		e.costFormula = In.getString(json, "costFormula");
-		e.costValue = In.getOptionalDouble(json, "costValue");
+		e.costs = In.getOptionalDouble(json, "costValue");
 		String currencyId = In.getRefId(json, "currency");
 		if (currencyId != null)
 			e.currency = CurrencyImport.run(currencyId, conf);
@@ -59,9 +59,10 @@ class Exchanges {
 	private static void addExchangeRefs(JsonObject json, Exchange e,
 			ImportConfig conf) {
 		Flow flow = FlowImport.run(In.getRefId(json, "flow"), conf);
-		e.setFlow(flow);
+		final Flow flow1 = flow;
+		e.flow = flow1;
 		String unitId = In.getRefId(json, "unit");
-		e.setUnit(conf.db.getUnit(unitId));
+		e.unit = conf.db.getUnit(unitId);
 		if (flow == null)
 			return;
 		String propId = In.getRefId(json, "flowProperty");
@@ -70,22 +71,10 @@ class Exchanges {
 			if (prop == null)
 				continue;
 			if (Objects.equals(propId, prop.getRefId())) {
-				e.setFlowPropertyFactor(f);
+				e.flowPropertyFactor = f;
 				break;
 			}
 		}
-	}
-
-	static class ExchangeWithId {
-
-		final String internalId;
-		final Exchange exchange;
-
-		private ExchangeWithId(String internalId, Exchange exchange) {
-			this.internalId = internalId;
-			this.exchange = exchange;
-		}
-
 	}
 
 }

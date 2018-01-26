@@ -1,27 +1,25 @@
 package org.openlca.ilcd.util;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openlca.ilcd.commons.Class;
-import org.openlca.ilcd.commons.ClassificationInformation;
-import org.openlca.ilcd.contacts.AdministrativeInformation;
+import org.openlca.ilcd.commons.Category;
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.contacts.AdminInfo;
 import org.openlca.ilcd.contacts.Contact;
-import org.openlca.ilcd.contacts.DataEntry;
-import org.openlca.ilcd.contacts.DataSetInformation;
-import org.openlca.ilcd.contacts.Publication;
+import org.openlca.ilcd.contacts.DataSetInfo;
 
 public class ContactBag implements IBag<Contact> {
 
 	private Contact contact;
-	private IlcdConfig config;
+	private String[] langs;
 
-	public ContactBag(Contact contact, IlcdConfig config) {
+	public ContactBag(Contact contact, String... langs) {
 		this.contact = contact;
-		this.config = config;
+		this.langs = langs;
 	}
 
 	@Override
@@ -31,114 +29,98 @@ public class ContactBag implements IBag<Contact> {
 
 	@Override
 	public String getId() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null)
-			return info.getUUID();
-		return null;
+		return contact == null ? null : contact.getUUID();
 	}
 
 	public String getShortName() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getShortName(), config);
+			return LangString.getFirst(info.shortName, langs);
 		return null;
 	}
 
 	public String getName() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getName(), config);
+			return LangString.getFirst(info.name, langs);
 		return null;
 	}
 
-	public List<Class> getSortedClasses() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null) {
-			ClassificationInformation classInfo = info
-					.getClassificationInformation();
-			return ClassList.sortedList(classInfo);
-		}
-		return Collections.emptyList();
+	public List<Category> getSortedClasses() {
+		return ClassList.sortedList(contact);
 	}
 
 	public String getContactAddress() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getContactAddress(), config);
+			return LangString.getFirst(info.contactAddress, langs);
 		return null;
 	}
 
 	public String getTelephone() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return info.getTelephone();
+			return info.telephone;
 		return null;
 	}
 
 	public String getTelefax() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return info.getTelefax();
+			return info.telefax;
 		return null;
 	}
 
 	public String getWebSite() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return info.getWWWAddress();
+			return info.wwwAddress;
 		return null;
 	}
 
 	public String getCentralContactPoint() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getCentralContactPoint(), config);
+			return LangString.getFirst(info.centralContactPoint, langs);
 		return null;
 	}
 
 	public String getEmail() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return info.getEmail();
+			return info.email;
 		return null;
 	}
 
 	public String getComment() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getDescription(), config);
+			return LangString.getFirst(info.description, langs);
 		return null;
 	}
 
-	private DataSetInformation getDataSetInformation() {
-		if (contact.getContactInformation() != null)
-			return contact.getContactInformation().getDataSetInformation();
+	private DataSetInfo getDataSetInformation() {
+		if (contact.contactInfo != null)
+			return contact.contactInfo.dataSetInfo;
 		return null;
 	}
 
 	public String getVersion() {
 		if (contact == null)
 			return null;
-		AdministrativeInformation info = contact.getAdministrativeInformation();
-		if (info == null)
-			return null;
-		Publication pub = info.getPublication();
-		if (pub == null)
-			return null;
-		else
-			return pub.getDataSetVersion();
+		return contact.getVersion();
 	}
 
 	public Date getTimeStamp() {
 		if (contact == null)
 			return null;
-		AdministrativeInformation info = contact.getAdministrativeInformation();
+		AdminInfo info = contact.adminInfo;
 		if (info == null)
 			return null;
-		DataEntry entry = info.getDataEntry();
+		DataEntry entry = info.dataEntry;
 		if (entry == null)
 			return null;
-		XMLGregorianCalendar cal = entry.getTimeStamp();
+		XMLGregorianCalendar cal = entry.timeStamp;
 		if (cal == null)
 			return null;
 		else

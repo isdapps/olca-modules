@@ -1,5 +1,7 @@
 package org.openlca.io.xls.process.output;
 
+import java.util.Date;
+
 import org.apache.poi.ss.usermodel.Sheet;
 import org.openlca.core.model.Exchange;
 import org.openlca.core.model.Location;
@@ -8,8 +10,6 @@ import org.openlca.core.model.ProcessDocumentation;
 import org.openlca.core.model.Version;
 import org.openlca.io.CategoryPath;
 import org.openlca.io.xls.Excel;
-
-import java.util.Date;
 
 class InfoSheet {
 
@@ -59,8 +59,8 @@ class InfoSheet {
 		config.header(sheet, row++, 0, "Quantitative reference");
 		String qRefName = null;
 		Exchange qRef = process.getQuantitativeReference();
-		if (qRef != null && qRef.getFlow() != null)
-			qRefName = qRef.getFlow().getName();
+		if (qRef != null && qRef.flow != null)
+			qRefName = qRef.flow.getName();
 		writePair("Quantitative reference", qRefName);
 	}
 

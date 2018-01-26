@@ -1,9 +1,12 @@
 package org.openlca.io.ecospold2.output;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Objects;
+import java.util.UUID;
+
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.model.Exchange;
-import org.openlca.ecospold2.Compartment;
-import org.openlca.ecospold2.ElementaryExchange;
 import org.openlca.io.maps.Maps;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
@@ -12,10 +15,8 @@ import org.supercsv.cellprocessor.Optional;
 import org.supercsv.cellprocessor.ParseDouble;
 import org.supercsv.cellprocessor.ift.CellProcessor;
 
-import java.util.HashMap;
-import java.util.List;
-import java.util.Objects;
-import java.util.UUID;
+import spold2.Compartment;
+import spold2.ElementaryExchange;
 
 class ElemFlowMap {
 
@@ -81,16 +82,16 @@ class ElemFlowMap {
 	}
 
 	public ElementaryExchange apply(Exchange olca) {
-		if (olca == null || olca.getFlow() == null) {
+		if (olca == null || olca.flow == null) {
 			log.warn("could not map exchange {}, exchange or flow is null",
 					olca);
 			return null;
 		}
-		ExportRecord record = map.get(olca.getFlow().getRefId());
+		ExportRecord record = map.get(olca.flow.getRefId());
 		if (record == null || !isValid(record, olca)) {
 			log.warn(
 					"elementary flow {} cannot be mapped to an ecoinvent flow",
-					olca.getFlow());
+					olca.flow);
 			return null;
 		}
 		return createExchange(olca, record);
@@ -99,30 +100,29 @@ class ElemFlowMap {
 	private boolean isValid(ExportRecord record, Exchange olca) {
 		return record != null
 				&& olca != null
-				&& olca.getFlowPropertyFactor() != null
-				&& olca.getFlowPropertyFactor().getFlowProperty() != null
-				&& Objects.equals(record.olcaPropertyId, olca
-						.getFlowPropertyFactor().getFlowProperty().getRefId())
-				&& olca.getUnit() != null
-				&& Objects.equals(record.olcaUnitId, olca.getUnit().getRefId());
+				&& olca.flowPropertyFactor != null
+				&& olca.flowPropertyFactor.getFlowProperty() != null
+				&& Objects.equals(record.olcaPropertyId, olca.flowPropertyFactor.getFlowProperty().getRefId())
+				&& olca.unit != null
+				&& Objects.equals(record.olcaUnitId, olca.unit.getRefId());
 	}
 
 	private ElementaryExchange createExchange(Exchange olca, ExportRecord record) {
 		ElementaryExchange exchange = new ElementaryExchange();
-		if (olca.isInput())
+		if (olca.isInput)
 			exchange.inputGroup = 4;
 		else
 			exchange.outputGroup = 4;
 		exchange.id = new UUID(olca.getId(), 0L).toString();
-		exchange.elementaryExchangeId = record.id;
+		exchange.flowId = record.id;
 		exchange.name = Strings.cut(record.name, 120);
 		exchange.compartment = createCompartment(record);
-		exchange.unitName = record.unitName;
+		exchange.unit = record.unitName;
 		exchange.unitId = record.unitId;
-		exchange.amount = record.conversionFactor * olca.getAmountValue();
-		if (olca.getAmountFormula() != null) {
+		exchange.amount = record.conversionFactor * olca.amount;
+		if (olca.amountFormula != null) {
 			exchange.mathematicalRelation = record.conversionFactor + " * ("
-			+ olca.getAmountFormula() + ")";
+			+ olca.amountFormula + ")";
 		}
 		// TODO: convert uncertainty information
 		return exchange;
@@ -130,9 +130,9 @@ class ElemFlowMap {
 
 	private Compartment createCompartment(ExportRecord record) {
 		Compartment compartment = new Compartment();
-		compartment.setSubcompartmentId(record.subCompartmentId);
-		compartment.setCompartment(record.compartment);
-		compartment.setSubcompartment(record.subCompartment);
+		compartment.id = record.subCompartmentId;
+		compartment.compartment = record.compartment;
+		compartment.subCompartment = record.subCompartment;
 		return compartment;
 	}
 

@@ -1,31 +1,26 @@
 package org.openlca.ilcd.util;
 
-import java.util.Collections;
 import java.util.Date;
 import java.util.List;
 
 import javax.xml.datatype.XMLGregorianCalendar;
 
-import org.openlca.ilcd.commons.Class;
-import org.openlca.ilcd.commons.ClassificationInformation;
-import org.openlca.ilcd.units.AdministrativeInformation;
-import org.openlca.ilcd.units.DataEntry;
-import org.openlca.ilcd.units.DataSetInformation;
-import org.openlca.ilcd.units.Publication;
-import org.openlca.ilcd.units.QuantitativeReference;
+import org.openlca.ilcd.commons.Category;
+import org.openlca.ilcd.commons.DataEntry;
+import org.openlca.ilcd.commons.LangString;
+import org.openlca.ilcd.units.AdminInfo;
+import org.openlca.ilcd.units.DataSetInfo;
 import org.openlca.ilcd.units.Unit;
 import org.openlca.ilcd.units.UnitGroup;
-import org.openlca.ilcd.units.UnitGroupInformation;
-import org.openlca.ilcd.units.UnitList;
 
 public class UnitGroupBag implements IBag<UnitGroup> {
 
 	private UnitGroup unitGroup;
-	private IlcdConfig config;
+	private String[] langs;
 
-	public UnitGroupBag(UnitGroup unitGroup, IlcdConfig config) {
+	public UnitGroupBag(UnitGroup unitGroup, String... langs) {
 		this.unitGroup = unitGroup;
-		this.config = config;
+		this.langs = langs;
 	}
 
 	@Override
@@ -34,85 +29,59 @@ public class UnitGroupBag implements IBag<UnitGroup> {
 	}
 
 	public Integer getReferenceUnitId() {
-		UnitGroupInformation info = unitGroup.getUnitGroupInformation();
-		if (info != null) {
-			QuantitativeReference qRef = info.getQuantitativeReference();
-			if (qRef != null && qRef.getReferenceToReferenceUnit() != null)
-				return qRef.getReferenceToReferenceUnit().intValue();
-		}
-		return null;
+		Unit u = UnitGroups.getReferenceUnit(unitGroup);
+		return u == null ? null : u.id;
 	}
 
 	public List<Unit> getUnits() {
-		UnitList list = unitGroup.getUnits();
-		if (list != null)
-			return list.getUnit();
-		return Collections.emptyList();
+		return UnitGroups.getUnits(unitGroup);
 	}
 
 	@Override
 	public String getId() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null)
-			return info.getUUID();
-		return null;
+		return unitGroup == null ? null : unitGroup.getUUID();
 	}
 
 	public String getName() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getName(), config);
+			return LangString.getFirst(info.name, langs);
 		return null;
 	}
 
 	public String getComment() {
-		DataSetInformation info = getDataSetInformation();
+		DataSetInfo info = getDataSetInformation();
 		if (info != null)
-			return LangString.get(info.getGeneralComment(), config);
+			return LangString.getFirst(info.generalComment, langs);
 		return null;
 	}
 
-	public List<Class> getSortedClasses() {
-		DataSetInformation info = getDataSetInformation();
-		if (info != null) {
-			ClassificationInformation classInfo = info
-					.getClassificationInformation();
-			return ClassList.sortedList(classInfo);
-		}
-		return Collections.emptyList();
+	public List<Category> getSortedClasses() {
+		return ClassList.sortedList(unitGroup);
 	}
 
-	private DataSetInformation getDataSetInformation() {
-		if (unitGroup.getUnitGroupInformation() != null)
-			return unitGroup.getUnitGroupInformation().getDataSetInformation();
+	private DataSetInfo getDataSetInformation() {
+		if (unitGroup.unitGroupInfo != null)
+			return unitGroup.unitGroupInfo.dataSetInfo;
 		return null;
 	}
 
 	public String getVersion() {
 		if (unitGroup == null)
 			return null;
-		AdministrativeInformation info = unitGroup
-				.getAdministrativeInformation();
-		if (info == null)
-			return null;
-		Publication pub = info.getPublicationAndOwnership();
-		if (pub == null)
-			return null;
-		else
-			return pub.getDataSetVersion();
+		return unitGroup.getVersion();
 	}
 
 	public Date getTimeStamp() {
 		if (unitGroup == null)
 			return null;
-		AdministrativeInformation info = unitGroup
-				.getAdministrativeInformation();
+		AdminInfo info = unitGroup.adminInfo;
 		if (info == null)
 			return null;
-		DataEntry entry = info.getDataEntryBy();
+		DataEntry entry = info.dataEntry;
 		if (entry == null)
 			return null;
-		XMLGregorianCalendar cal = entry.getTimeStamp();
+		XMLGregorianCalendar cal = entry.timeStamp;
 		if (cal == null)
 			return null;
 		else

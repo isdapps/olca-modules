@@ -2,8 +2,8 @@ package org.openlca.io.ilcd.input;
 
 import org.openlca.core.model.Exchange;
 import org.openlca.ilcd.commons.ExchangeDirection;
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.util.ExchangeExtension;
-import org.openlca.ilcd.util.LangString;
 
 /**
  * A helper class for the conversion of ILCD exchanges to openLCA exchanges. The
@@ -19,8 +19,7 @@ class ExchangeConversion {
 	private ExchangeExtension extension;
 	private Exchange olcaExchange;
 
-	public ExchangeConversion(
-			org.openlca.ilcd.processes.Exchange ilcdExchange,ImportConfig config) {
+	public ExchangeConversion(org.openlca.ilcd.processes.Exchange ilcdExchange, ImportConfig config) {
 		this.ilcdExchange = ilcdExchange;
 		this.config = config;
 		ExchangeExtension ext = new ExchangeExtension(ilcdExchange);
@@ -38,38 +37,38 @@ class ExchangeConversion {
 
 	private Exchange initExchange() {
 		Exchange e = new Exchange();
-		boolean input = ilcdExchange.getExchangeDirection() == ExchangeDirection.INPUT;
-		e.setInput(input);
-		e.description = LangString.get(ilcdExchange.getGeneralComment(),
-				config.ilcdConfig);
+		boolean input = ilcdExchange.direction == ExchangeDirection.INPUT;
+		e.isInput = input;
+		e.description = LangString.getFirst(ilcdExchange.comment,
+				config.langs);
 		if (extension != null) {
-			e.setPedigreeUncertainty(extension.getPedigreeUncertainty());
-			e.setBaseUncertainty(extension.getBaseUncertainty());
-			e.setAmountValue(extension.getAmount());
+			e.dqEntry = extension.getPedigreeUncertainty();
+			e.baseUncertainty = extension.getBaseUncertainty();
+			e.amount = extension.getAmount();
 		} else {
-			Double amount = ilcdExchange.getResultingAmount();
+			Double amount = ilcdExchange.resultingAmount;
 			if (amount != null)
-				e.setAmountValue(amount);
+				e.amount = amount;
 		}
 		return e;
 	}
 
 	private boolean isParameterized() {
-		return ilcdExchange.getParameterName() != null
+		return ilcdExchange.variable != null
 				|| (extension != null && extension.getFormula() != null);
 	}
 
 	private void mapFormula() {
 		String formula = extension != null ? extension.getFormula() : null;
 		if (formula != null)
-			olcaExchange.setAmountFormula(formula);
+			olcaExchange.amountFormula = formula;
 		else {
-			double meanAmount = ilcdExchange.getMeanAmount();
+			double meanAmount = ilcdExchange.meanAmount;
 			String meanAmountStr = Double.toString(meanAmount);
-			String parameter = ilcdExchange.getParameterName();
+			String parameter = ilcdExchange.variable;
 			formula = meanAmount == 1.0 ? parameter : meanAmountStr + " * "
 					+ parameter + "";
-			olcaExchange.setAmountFormula(formula);
+			olcaExchange.amountFormula = formula;
 		}
 	}
 

@@ -6,6 +6,7 @@ import java.util.Map;
 import org.openlca.core.model.AllocationMethod;
 import org.openlca.core.model.FlowPropertyType;
 import org.openlca.core.model.FlowType;
+import org.openlca.core.model.ImpactMethod.ParameterMean;
 import org.openlca.core.model.ModelType;
 import org.openlca.core.model.ParameterScope;
 import org.openlca.core.model.ProcessType;
@@ -23,6 +24,7 @@ public class Enums {
 		putUnmapped(ProcessType.class, ProcessType.values());
 		putUnmapped(FlowType.class, FlowType.values());
 		putUnmapped(RiskLevel.class, RiskLevel.values());
+		putUnmapped(ParameterMean.class, ParameterMean.values());
 		putFlowPropertyTypes();
 		putAllocationMethods();
 		putParameterScopes();

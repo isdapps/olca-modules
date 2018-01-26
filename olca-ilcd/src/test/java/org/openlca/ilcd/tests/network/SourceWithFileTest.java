@@ -12,13 +12,13 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openlca.ilcd.SampleSource;
 import org.openlca.ilcd.io.DataStoreException;
-import org.openlca.ilcd.io.NetworkClient;
-import org.openlca.ilcd.sources.DigitalFileReference;
+import org.openlca.ilcd.io.SodaClient;
+import org.openlca.ilcd.sources.FileRef;
 import org.openlca.ilcd.sources.Source;
 
 public class SourceWithFileTest {
 
-	private NetworkClient client;
+	private SodaClient client;
 
 	@Before
 	public void setUp() throws Exception {
@@ -32,10 +32,9 @@ public class SourceWithFileTest {
 		Assume.assumeTrue(Network.isAppAlive());
 		String id = UUID.randomUUID().toString();
 		Source source = makeSource(id);
-		client.put(source, id);
+		client.put(source);
 		Source fromServer = client.get(Source.class, id);
-		Assert.assertEquals(id, fromServer.getSourceInformation()
-				.getDataSetInformation().getUUID());
+		Assert.assertEquals(id, fromServer.sourceInfo.dataSetInfo.uuid);
 	}
 
 	@Test
@@ -48,7 +47,7 @@ public class SourceWithFileTest {
 		Files.write(tempFile, content);
 		File file = tempFile.toFile();
 		addFileLink(source, file);
-		client.put(source, id, file);
+		client.put(source, new File[] { file });
 		InputStream is = client.getExternalDocument(id, file.getName());
 		byte[] contentFromServer = new byte[content.length];
 		is.read(contentFromServer);
@@ -65,16 +64,14 @@ public class SourceWithFileTest {
 
 	private Source makeSource(String id) {
 		Source source = SampleSource.create();
-		source.getSourceInformation().getDataSetInformation().setUUID(id);
+		source.sourceInfo.dataSetInfo.uuid = id;
 		return source;
 	}
 
 	private void addFileLink(Source source, File file) {
-		DigitalFileReference ref = new DigitalFileReference();
-		ref.setUri("../external_docs/" + file.getName());
-		source.getSourceInformation()
-				.getDataSetInformation()
-				.getReferenceToDigitalFile()
+		FileRef ref = new FileRef();
+		ref.uri = "../external_docs/" + file.getName();
+		source.sourceInfo.dataSetInfo.files
 				.add(ref);
 	}
 }

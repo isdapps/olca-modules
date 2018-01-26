@@ -23,6 +23,10 @@ class ProcessCopy {
 		copy.setProcessType(origin.getProcessType());
 		copy.setInfrastructureProcess(origin.isInfrastructureProcess());
 		copy.currency = origin.currency;
+		copy.dqEntry = origin.dqEntry;
+		copy.dqSystem = origin.dqSystem;
+		copy.exchangeDqSystem = origin.exchangeDqSystem;
+		copy.socialDqSystem = origin.socialDqSystem;
 		if (origin.getDocumentation() != null)
 			copy.setDocumentation(origin.getDocumentation().clone());
 	}
@@ -58,10 +62,10 @@ class ProcessCopy {
 		if (origin == null)
 			return null;
 		for (Exchange copy : processCopy.getExchanges()) {
-			boolean equal = origin.isInput() == copy.isInput()
-					&& Objects.equals(origin.getFlow(), copy.getFlow())
-					&& origin.getAmountValue() == copy.getAmountValue()
-					&& Objects.equals(origin.getUnit(), copy.getUnit());
+			boolean equal = origin.isInput == copy.isInput
+					&& Objects.equals(origin.flow, copy.flow)
+					&& origin.amount == copy.amount
+					&& Objects.equals(origin.unit, copy.unit);
 			if (equal)
 				return copy;
 		}

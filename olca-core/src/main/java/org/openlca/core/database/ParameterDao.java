@@ -96,4 +96,5 @@ public class ParameterDao extends
 		args.put("id", id);
 		return getAll(jpql, args);
 	}	
+	
 }

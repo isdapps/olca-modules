@@ -5,12 +5,13 @@ import java.util.ArrayList;
 import java.util.List;
 
 import org.openlca.core.database.BaseDao;
+import org.openlca.core.database.Daos;
 import org.openlca.core.database.IDatabase;
 import org.openlca.core.database.NativeSql;
 import org.openlca.core.database.derby.DerbyDatabase;
-import org.openlca.core.database.upgrades.Upgrades;
-import org.openlca.core.math.IMatrixSolver;
-import org.openlca.core.math.JavaSolver;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
+import org.openlca.core.matrix.solvers.JavaSolver;
+import org.openlca.core.model.AbstractEntity;
 import org.openlca.core.model.CategorizedEntity;
 
 public class Tests {
@@ -44,19 +45,7 @@ public class Tests {
 		String dbName = "olca_test_db_1.4";
 		File tmpDir = new File(tmpDirPath);
 		File folder = new File(tmpDir, dbName);
-		IDatabase db = new DerbyDatabase(folder);
-		try {
-			// (currently) it should be always possible to run the database
-			// updates on databases that were already updated as the
-			// updated should check if an update is necessary or not. Thus
-			// we reset the version here and test if the updates work.
-			String versionReset = "update openlca_version set version = 1";
-			NativeSql.on(db).runUpdate(versionReset);
-			Upgrades.runUpgrades(db);
-			return db;
-		} catch (Exception e) {
-			throw new RuntimeException("DB-upgrades failed", e);
-		}
+		return new DerbyDatabase(folder);
 	}
 
 	public static <T extends CategorizedEntity> T insert(T e) {
@@ -78,8 +67,8 @@ public class Tests {
 	}
 
 	@SuppressWarnings("unchecked")
-	public static <T> BaseDao<T> dao(T entity) {
-		return (BaseDao<T>) new BaseDao<>(entity.getClass(), getDb());
+	public static <T extends AbstractEntity> BaseDao<T> dao(T entity) {
+		return (BaseDao<T>) Daos.base(getDb(), entity.getClass());
 	}
 
 	public static void clearDb() {

@@ -4,19 +4,16 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 
 import java.io.InputStream;
-import java.math.BigInteger;
 import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openlca.ilcd.commons.Class;
+import org.openlca.ilcd.commons.Category;
 import org.openlca.ilcd.commons.ProcessType;
 import org.openlca.ilcd.commons.Time;
-import org.openlca.ilcd.io.XmlBinder;
 import org.openlca.ilcd.processes.Exchange;
 import org.openlca.ilcd.processes.Geography;
 import org.openlca.ilcd.processes.Process;
-import org.openlca.ilcd.util.IlcdConfig;
 import org.openlca.ilcd.util.ProcessBag;
 
 public class ProcessBagTest {
@@ -29,7 +26,7 @@ public class ProcessBagTest {
 				"process.xml")) {
 			XmlBinder binder = new XmlBinder();
 			Process process = binder.fromStream(Process.class, stream);
-			bag = new ProcessBag(process, IlcdConfig.getDefault());
+			bag = new ProcessBag(process, "en");
 		}
 	}
 
@@ -56,34 +53,35 @@ public class ProcessBagTest {
 
 	@Test
 	public void testGetSortedClasses() {
-		List<Class> classes = bag.getSortedClasses();
+		List<Category> classes = bag.getSortedClasses();
 		assertTrue(classes.size() == 2);
-		assertEquals("Materials production", classes.get(0).getValue());
-		assertEquals("Plastics", classes.get(1).getValue());
+		assertEquals("Materials production", classes.get(0).value);
+		assertEquals("Plastics", classes.get(1).value);
 	}
 
 	@Test
 	public void testGetTime() {
 		Time time = bag.getTime();
-		assertEquals(1996, time.getReferenceYear().intValue());
+		assertEquals(1996, time.referenceYear.intValue());
 	}
 
 	@Test
 	public void testGetGeography() {
 		Geography geography = bag.getGeography();
-		assertEquals("RER", geography.getLocation().getLocation());
+		assertEquals("RER", geography.location.code);
 	}
 
 	@Test
 	public void testGetReferenceFlowIds() {
-		List<BigInteger> refs = bag.getReferenceFlowIds();
+		List<Integer> refs = bag.getReferenceFlowIds();
 		assertTrue(refs.size() == 1);
-		assertEquals(new BigInteger("56"), refs.get(0));
+		assertEquals(Integer.valueOf(56), refs.get(0));
 	}
 
 	@Test
 	public void testGetProcessType() {
-		assertEquals(ProcessType.PARTLY_TERMINATED_SYSTEM, bag.getProcessType());
+		assertEquals(ProcessType.PARTLY_TERMINATED_SYSTEM,
+				bag.getProcessType());
 	}
 
 	@Test

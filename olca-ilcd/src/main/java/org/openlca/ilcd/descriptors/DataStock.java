@@ -1,71 +1,51 @@
 package org.openlca.ilcd.descriptors;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.xml.bind.annotation.XmlAccessType;
 import javax.xml.bind.annotation.XmlAccessorType;
 import javax.xml.bind.annotation.XmlAttribute;
 import javax.xml.bind.annotation.XmlElement;
 
+import org.openlca.ilcd.commons.LangString;
+
 @XmlAccessorType(XmlAccessType.FIELD)
 public class DataStock {
 
-	@XmlAttribute(name = "root",
-			namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
-	private boolean root;
+	@XmlAttribute(name = "root")
+	public boolean root;
 
-	@XmlElement(name = "uuid",
-			namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
-	private String uuid;
+	@XmlElement(name = "uuid", namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
+	public String uuid;
 
-	@XmlElement(name = "shortName",
-			namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
-	private LangString shortName;
+	@XmlElement(name = "shortName", namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
+	public String shortName;
 
-	@XmlElement(name = "name",
-			namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
-	private LangString name;
+	@XmlElement(name = "name", namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
+	public LangString name;
 
-	@XmlElement(name = "description",
-			namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
-	private LangString description;
+	@XmlElement(name = "description", namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
+	public LangString description;
 
-	public boolean isRoot() {
-		return root;
+	/**
+	 * Contains the user roles. Is only used when the data stock description is
+	 * returned in authentication information.
+	 */
+	@XmlElement(name = "role", namespace = "http://www.ilcd-network.org/ILCD/ServiceAPI")
+	public final List<String> roles = new ArrayList<>();
+
+	@Override
+	public String toString() {
+		return "DataStock [ " + shortName + "/" + uuid + "/root=" + root + "]";
 	}
 
-	public void setRoot(boolean root) {
-		this.root = root;
+	public boolean isReadAllowed() {
+		return this.roles.contains("READ");
 	}
 
-	public String getUuid() {
-		return uuid;
-	}
-
-	public void setUuid(String uuid) {
-		this.uuid = uuid;
-	}
-
-	public LangString getShortName() {
-		return shortName;
-	}
-
-	public void setShortName(LangString shortName) {
-		this.shortName = shortName;
-	}
-
-	public LangString getName() {
-		return name;
-	}
-
-	public void setName(LangString name) {
-		this.name = name;
-	}
-
-	public LangString getDescription() {
-		return description;
-	}
-
-	public void setDescription(LangString description) {
-		this.description = description;
+	public boolean isExportAllowed() {
+		return this.roles.contains("EXPORT");
 	}
 
 }

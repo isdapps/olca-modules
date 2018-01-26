@@ -1,9 +1,13 @@
 package org.openlca.io.ilcd.input;
 
+import java.util.Calendar;
+
 import org.openlca.core.database.IDatabase;
+import org.openlca.core.database.UnitGroupDao;
 import org.openlca.core.model.Unit;
 import org.openlca.core.model.UnitGroup;
-import org.openlca.ilcd.util.LangString;
+import org.openlca.core.model.Version;
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.util.UnitExtension;
 import org.openlca.ilcd.util.UnitGroupBag;
 import org.slf4j.Logger;
@@ -47,10 +51,13 @@ class UnitGroupSync {
 			if (ilcdRefUnit == null)
 				return;
 			double factor = olcaRefUnit.getConversionFactor()
-					/ ilcdRefUnit.getMeanValue();
+					/ ilcdRefUnit.factor;
 			boolean changed = syncUnits(factor);
-			if (changed)
-				database.createDao(UnitGroup.class).update(olcaGroup);
+			if (changed) {
+				olcaGroup.setLastChange(Calendar.getInstance().getTimeInMillis());
+				Version.incUpdate(olcaGroup);
+				new UnitGroupDao(database).update(olcaGroup);
+			}
 		} catch (Exception e) {
 			log.error("Failed to sync. unit groups", e);
 		}
@@ -77,10 +84,10 @@ class UnitGroupSync {
 				continue;
 			Unit unit = new Unit();
 			unit.setRefId(id);
-			unit.setName(ilcdUnit.getName());
-			unit.setConversionFactor(factor * ilcdUnit.getMeanValue());
-			unit.setDescription(LangString.get(ilcdUnit.getGeneralComment(),
-					config.ilcdConfig));
+			unit.setName(ilcdUnit.name);
+			unit.setConversionFactor(factor * ilcdUnit.factor);
+			unit.setDescription(LangString.getFirst(ilcdUnit.comment,
+					config.langs));
 			olcaGroup.getUnits().add(unit);
 			changed = true;
 		}

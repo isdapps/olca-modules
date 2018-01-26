@@ -8,11 +8,9 @@ import java.util.List;
 
 import org.junit.Before;
 import org.junit.Test;
-import org.openlca.ilcd.commons.Class;
+import org.openlca.ilcd.commons.Category;
 import org.openlca.ilcd.contacts.Contact;
-import org.openlca.ilcd.io.XmlBinder;
 import org.openlca.ilcd.util.ContactBag;
-import org.openlca.ilcd.util.IlcdConfig;
 
 public class ContactBagTest {
 
@@ -24,7 +22,7 @@ public class ContactBagTest {
 				"contact.xml")) {
 			XmlBinder binder = new XmlBinder();
 			Contact contact = binder.fromStream(Contact.class, stream);
-			bag = new ContactBag(contact, IlcdConfig.getDefault());
+			bag = new ContactBag(contact, "en");
 		}
 	}
 
@@ -45,10 +43,9 @@ public class ContactBagTest {
 
 	@Test
 	public void testGetSortedClasses() {
-		List<Class> classes = bag.getSortedClasses();
+		List<Category> classes = bag.getSortedClasses();
 		assertTrue(classes.size() == 1);
-		assertEquals("Working groups within organisation", classes.get(0)
-				.getValue());
+		assertEquals("Working groups within organisation", classes.get(0).value);
 	}
 
 	@Test

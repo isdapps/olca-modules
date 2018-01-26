@@ -5,8 +5,10 @@ import java.io.FileInputStream;
 import java.io.InputStream;
 import java.util.Enumeration;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
@@ -29,6 +31,7 @@ import org.openlca.ecospold.IAllocation;
 import org.openlca.ecospold.IDataSet;
 import org.openlca.ecospold.IEcoSpold;
 import org.openlca.ecospold.IExchange;
+import org.openlca.ecospold.IGeography;
 import org.openlca.ecospold.IPerson;
 import org.openlca.ecospold.IReferenceFunction;
 import org.openlca.ecospold.ISource;
@@ -37,10 +40,11 @@ import org.openlca.ecospold.io.DataSetType;
 import org.openlca.ecospold.io.EcoSpoldIO;
 import org.openlca.io.FileImport;
 import org.openlca.io.ImportEvent;
-import org.openlca.util.KeyGen;
+import org.openlca.io.ImportInfo;
 import org.openlca.io.UnitMapping;
 import org.openlca.io.maps.FlowMap;
-import org.openlca.io.maps.MapType;
+import org.openlca.io.maps.Maps;
+import org.openlca.util.KeyGen;
 import org.openlca.util.Strings;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -62,10 +66,16 @@ public class EcoSpold01Import implements FileImport {
 	private boolean canceled = false;
 	private File[] files;
 
+	private final ImportInfo.Collector infos = new ImportInfo.Collector();
+
 	public EcoSpold01Import(IDatabase iDatabase, UnitMapping unitMapping) {
 		this.db = new DB(iDatabase);
-		FlowMap flowMap = new FlowMap(MapType.ES1_FLOW);
+		FlowMap flowMap = new FlowMap(Maps.ES1_FLOW_IMPORT, iDatabase);
 		this.flowImport = new FlowImport(db, unitMapping, flowMap);
+	}
+
+	public List<ImportInfo> getInfos() {
+		return infos.get();
 	}
 
 	public EcoSpold01Import(IDatabase iDatabase, UnitMapping unitMapping,
@@ -162,161 +172,180 @@ public class EcoSpold01Import implements FileImport {
 		if (type == DataSetType.PROCESS) {
 			for (IDataSet ds : spold.getDataset()) {
 				DataSet dataSet = new DataSet(ds, type.getFactory());
-				parseProcessDataSet(dataSet);
+				handleProcessDataSet(dataSet);
 			}
 		} else if (!spold.getDataset().isEmpty()) {
-			insertImpactMethod(spold);
+			impactMethod(spold);
 		}
 	}
 
-	private void parseProcessDataSet(DataSet dataSet) {
-		if (dataSet.getReferenceFunction() == null)
+	private void handleProcessDataSet(DataSet ds) {
+		if (ds.getReferenceFunction() == null)
 			return;
-		insertPersons(dataSet);
-		insertSources(dataSet);
-		insertLocations(dataSet);
-		insertProcess(dataSet);
+		persons(ds);
+		sources(ds);
+		locations(ds);
+		process(ds);
 	}
 
-	private void insertPersons(DataSet dataSet) {
-		for (IPerson person : dataSet.getPersons()) {
-			String genKey = ES1KeyGen.forPerson(person);
-			if (db.findActor(person, genKey) != null)
+	private void persons(DataSet ds) {
+		for (IPerson person : ds.getPersons()) {
+			String id = ES1KeyGen.forPerson(person);
+			Actor actor = db.findActor(person, id);
+			if (actor != null) {
+				infos.ignored(actor);
 				continue;
-			Actor actor = new Actor();
-			actor.setRefId(genKey);
+			}
+			actor = new Actor();
+			actor.setRefId(id);
 			Mapper.mapPerson(person, actor);
-			db.put(actor, genKey);
+			db.put(actor, id);
+			infos.imported(actor);
 		}
 	}
 
-	private void insertSources(DataSet dataSet) {
-		for (ISource eSource : dataSet.getSources()) {
-			String sourceId = ES1KeyGen.forSource(eSource);
-			if (db.findSource(eSource, sourceId) != null)
+	private void sources(DataSet ds) {
+		for (ISource eSource : ds.getSources()) {
+			String id = ES1KeyGen.forSource(eSource);
+			Source oSource = db.findSource(eSource, id);
+			if (oSource != null) {
+				infos.ignored(oSource);
 				continue;
-			Source oSource = new Source();
-			oSource.setRefId(sourceId);
+			}
+			oSource = new Source();
+			oSource.setRefId(id);
 			Mapper.mapSource(eSource, oSource);
-			db.put(oSource, sourceId);
+			db.put(oSource, id);
+			infos.imported(oSource);
 		}
 	}
 
-	private void insertLocations(DataSet dataSet) {
-		if (dataSet.getGeography() != null)
-			insertLocation(dataSet.getGeography().getLocation());
-		for (IExchange exchange : dataSet.getExchanges())
-			insertLocation(exchange.getLocation());
+	private void locations(DataSet ds) {
+		Set<String> codes = new HashSet<>();
+		IGeography geo = ds.getGeography();
+		if (geo != null && geo.getLocation() != null) {
+			codes.add(geo.getLocation());
+		}
+		for (IExchange e : ds.getExchanges()) {
+			if (e.getLocation() != null) {
+				codes.add(e.getLocation());
+			}
+		}
+		for (String code : codes) {
+			String id = KeyGen.get(code);
+			Location loc = db.findLocation(code, id);
+			if (loc != null) {
+				infos.ignored(loc);
+				continue;
+			}
+			loc = new Location();
+			loc.setRefId(id);
+			loc.setName(code);
+			loc.setCode(code);
+			db.put(loc, id);
+			infos.imported(loc);
+		}
 	}
 
-	private void insertLocation(String locationCode) {
-		if (locationCode == null)
+	private void process(DataSet ds) {
+		String id = ES1KeyGen.forProcess(ds);
+		Process p = db.get(Process.class, id);
+		if (p != null) {
+			log.trace("Process {} already exists, not imported", id);
+			infos.ignored(p);
 			return;
-		String genKey = KeyGen.get(locationCode);
-		Location location = db.findLocation(locationCode, genKey);
-		if (location == null) {
-			location = new Location();
-			location.setRefId(genKey);
-			location.setName(locationCode);
-			location.setCode(locationCode);
-			db.put(location, genKey);
-		}
-	}
-
-	private void insertProcess(DataSet dataSet) {
-		String processId = ES1KeyGen.forProcess(dataSet);
-		Process process = db.get(Process.class, processId);
-		if (process != null) {
-			log.trace("Process {} already exists, not imported", processId);
-			return;
 		}
 
-		process = new Process();
-		process.setRefId(processId);
-		ProcessDocumentation documentation = new ProcessDocumentation();
-		process.setDocumentation(documentation);
+		p = new Process();
+		p.setRefId(id);
+		ProcessDocumentation doc = new ProcessDocumentation();
+		p.setDocumentation(doc);
 
-		IReferenceFunction refFun = dataSet.getReferenceFunction();
+		IReferenceFunction refFun = ds.getReferenceFunction();
 		if (refFun != null)
-			mapReferenceFunction(refFun, process, documentation);
+			mapReferenceFunction(refFun, p, doc);
 
-		process.setProcessType(Mapper.getProcessType(dataSet));
-		mapTimeAndGeography(dataSet, process, documentation);
+		p.setProcessType(Mapper.getProcessType(ds));
+		mapTimeAndGeography(ds, p, doc);
 
-		if (dataSet.getTechnology() != null
-				&& dataSet.getTechnology().getText() != null)
-			documentation.setTechnology(Strings.cut(
-					(dataSet.getTechnology().getText()), 65500));
-
-		mapExchanges(dataSet.getExchanges(), process);
-		if (process.getQuantitativeReference() == null)
-			createProductFromRefFun(dataSet, process);
-
-		if (dataSet.getAllocations() != null
-				&& dataSet.getAllocations().size() > 0) {
-			mapAllocations(process, dataSet.getAllocations());
-			process.setDefaultAllocationMethod(AllocationMethod.CAUSAL);
+		if (ds.getTechnology() != null
+				&& ds.getTechnology().getText() != null) {
+			doc.setTechnology(Strings.cut(
+					(ds.getTechnology().getText()), 65500));
 		}
 
-		Mapper.mapModellingAndValidation(dataSet, documentation);
-		Mapper.mapAdminInfo(dataSet, process);
-		mapActors(documentation, dataSet);
-		mapSources(documentation, dataSet);
+		mapExchanges(ds.getExchanges(), p);
+		if (p.getQuantitativeReference() == null)
+			createProductFromRefFun(ds, p);
 
-		db.put(process, processId);
+		if (ds.getAllocations() != null
+				&& ds.getAllocations().size() > 0) {
+			mapAllocations(p, ds.getAllocations());
+			p.setDefaultAllocationMethod(AllocationMethod.CAUSAL);
+		}
+
+		Mapper.mapModellingAndValidation(ds, doc);
+		Mapper.mapAdminInfo(ds, p);
+		mapActors(doc, ds);
+		mapSources(doc, ds);
+
+		db.put(p, id);
 		localExchangeCache.clear();
+		infos.imported(p);
 	}
 
-	private void mapTimeAndGeography(DataSet dataSet, Process process,
-			ProcessDocumentation documentation) {
-		ProcessTime processTime = new ProcessTime(dataSet.getTimePeriod());
-		processTime.map(documentation);
-		if (dataSet.getGeography() != null) {
-			String locationCode = dataSet.getGeography().getLocation();
+	private void mapTimeAndGeography(DataSet ds, Process p,
+			ProcessDocumentation doc) {
+		ProcessTime time = new ProcessTime(ds.getTimePeriod());
+		time.map(doc);
+		if (ds.getGeography() != null) {
+			String locationCode = ds.getGeography().getLocation();
 			if (locationCode != null) {
 				String genKey = KeyGen.get(locationCode);
-				process.setLocation(db.findLocation(locationCode, genKey));
+				p.setLocation(db.findLocation(locationCode, genKey));
 			}
-			documentation.setGeography(dataSet.getGeography().getText());
+			doc.setGeography(ds.getGeography().getText());
 		}
 	}
 
-	private void mapActors(ProcessDocumentation doc, DataSet dataSet) {
+	private void mapActors(ProcessDocumentation doc, DataSet ds) {
 		Map<Integer, Actor> actors = new HashMap<>();
-		for (IPerson person : dataSet.getPersons()) {
+		for (IPerson person : ds.getPersons()) {
 			Actor actor = db.findActor(person, ES1KeyGen.forPerson(person));
 			if (actor != null)
 				actors.put(person.getNumber(), actor);
 		}
-		if (dataSet.getDataGeneratorAndPublication() != null)
-			doc.setDataGenerator(actors.get(dataSet
+		if (ds.getDataGeneratorAndPublication() != null)
+			doc.setDataGenerator(actors.get(ds
 					.getDataGeneratorAndPublication().getPerson()));
-		if (dataSet.getValidation() != null)
-			doc.setReviewer(actors.get(dataSet.getValidation()
+		if (ds.getValidation() != null)
+			doc.setReviewer(actors.get(ds.getValidation()
 					.getProofReadingValidator()));
-		if (dataSet.getDataEntryBy() != null)
-			doc.setDataDocumentor(actors.get(dataSet.getDataEntryBy()
+		if (ds.getDataEntryBy() != null)
+			doc.setDataDocumentor(actors.get(ds.getDataEntryBy()
 					.getPerson()));
 	}
 
-	private void mapAllocations(Process process, List<IAllocation> allocations) {
+	private void mapAllocations(Process process,
+			List<IAllocation> allocations) {
 		for (IAllocation allocation : allocations) {
-			double factor = Math.round(allocation.getFraction() * 10000d) / 1000000d;
+			double factor = Math.round(allocation.getFraction() * 10000d)
+					/ 1000000d;
 			Exchange product = localExchangeCache.get(allocation
 					.getReferenceToCoProduct());
 			for (Integer i : allocation.getReferenceToInputOutput()) {
-				Exchange exchange = localExchangeCache.get(i);
-				if (exchange == null) {
+				Exchange e = localExchangeCache.get(i);
+				if (e == null) {
 					log.warn("allocation factor points to an exchange that "
 							+ "does not exist: {}", i);
 					continue;
 				}
-				AllocationFactor allocationFactor = new AllocationFactor();
-				allocationFactor.setProductId(product.getFlow().getId());
-				allocationFactor.setValue(factor);
-				allocationFactor.setAllocationType(AllocationMethod.CAUSAL);
-				allocationFactor.setExchange(exchange);
-				process.getAllocationFactors().add(allocationFactor);
+				AllocationFactor af = new AllocationFactor();
+				af.setProductId(product.flow.getId());
+				af.setValue(factor);
+				af.setAllocationType(AllocationMethod.CAUSAL);
+				af.setExchange(e);
+				process.getAllocationFactors().add(af);
 			}
 		}
 	}
@@ -329,14 +358,15 @@ public class EcoSpold01Import implements FileImport {
 				continue;
 			}
 			Exchange outExchange = new Exchange();
-			outExchange.setFlow(flow.flow);
-			outExchange.setUnit(flow.unit);
-			outExchange.setFlowPropertyFactor(flow.flowProperty);
-			outExchange.setInput(inExchange.getInputGroup() != null);
+			outExchange.flow = flow.flow;
+			outExchange.unit = flow.unit;
+			outExchange.flowPropertyFactor = flow.flowProperty;
+			outExchange.isInput = inExchange.getInputGroup() != null;
 			ExchangeAmount exchangeAmount = new ExchangeAmount(outExchange,
 					inExchange);
 			outExchange.description = inExchange.getGeneralComment();
 			exchangeAmount.map(flow.conversionFactor);
+			outExchange.internalId = ioProcess.drawNextInternalId();
 			ioProcess.getExchanges().add(outExchange);
 			localExchangeCache.put(inExchange.getNumber(), outExchange);
 			if (ioProcess.getQuantitativeReference() == null
@@ -348,7 +378,8 @@ public class EcoSpold01Import implements FileImport {
 		}
 	}
 
-	private void mapFactors(List<IExchange> inFactors, ImpactCategory ioCategory) {
+	private void mapFactors(List<IExchange> inFactors,
+			ImpactCategory ioCategory) {
 		for (IExchange inFactor : inFactors) {
 			FlowBucket flow = flowImport.handleImpactFactor(inFactor);
 			if (flow == null || !flow.isValid()) {
@@ -356,15 +387,16 @@ public class EcoSpold01Import implements FileImport {
 				continue;
 			}
 			ImpactFactor factor = new ImpactFactor();
-			factor.setFlow(flow.flow);
-			factor.setFlowPropertyFactor(flow.flowProperty);
-			factor.setUnit(flow.unit);
-			factor.setValue(flow.conversionFactor * inFactor.getMeanValue());
-			ioCategory.getImpactFactors().add(factor);
+			factor.flow = flow.flow;
+			factor.flowPropertyFactor = flow.flowProperty;
+			factor.unit = flow.unit;
+			factor.value = flow.conversionFactor * inFactor.getMeanValue();
+			ioCategory.impactFactors.add(factor);
 		}
 	}
 
-	private ImpactCategory mapReferenceFunction(IReferenceFunction inRefFunction) {
+	private ImpactCategory mapReferenceFunction(
+			IReferenceFunction inRefFunction) {
 		ImpactCategory category = new ImpactCategory();
 		category.setRefId(UUID.randomUUID().toString());
 		String name = inRefFunction.getSubCategory();
@@ -372,7 +404,7 @@ public class EcoSpold01Import implements FileImport {
 			name = name.concat(" - ").concat(inRefFunction.getName());
 		}
 		category.setName(name);
-		category.setReferenceUnit(inRefFunction.getUnit());
+		category.referenceUnit = inRefFunction.getUnit();
 		return category;
 	}
 
@@ -387,7 +419,8 @@ public class EcoSpold01Import implements FileImport {
 		if (processCategory != null)
 			cat = db.getPutCategory(processCategory, topCategory, subCategory);
 		else
-			cat = db.getPutCategory(ModelType.PROCESS, topCategory, subCategory);
+			cat = db.getPutCategory(ModelType.PROCESS, topCategory,
+					subCategory);
 		ioProcess.setCategory(cat);
 	}
 
@@ -398,13 +431,14 @@ public class EcoSpold01Import implements FileImport {
 			return;
 		}
 		Exchange outExchange = new Exchange();
-		outExchange.setFlow(flow.flow);
-		outExchange.setUnit(flow.unit);
-		outExchange.setFlowPropertyFactor(flow.flowProperty);
-		outExchange.setInput(false);
+		outExchange.flow = flow.flow;
+		outExchange.unit = flow.unit;
+		outExchange.flowPropertyFactor = flow.flowProperty;
+		outExchange.isInput = false;
 		double amount = dataSet.getReferenceFunction().getAmount()
 				* flow.conversionFactor;
-		outExchange.setAmountValue(amount);
+		outExchange.amount = amount;
+		outExchange.internalId = ioProcess.drawNextInternalId();
 		ioProcess.getExchanges().add(outExchange);
 		ioProcess.setQuantitativeReference(outExchange);
 	}
@@ -426,7 +460,7 @@ public class EcoSpold01Import implements FileImport {
 					.getReferenceToPublishedSource()));
 	}
 
-	private void insertImpactMethod(IEcoSpold es) {
+	private void impactMethod(IEcoSpold es) {
 		if (es.getDataset().isEmpty())
 			return;
 		DataSet dataSet = new DataSet(es.getDataset().get(0),
@@ -435,6 +469,7 @@ public class EcoSpold01Import implements FileImport {
 		ImpactMethod method = db.get(ImpactMethod.class, methodId);
 		if (method != null) {
 			log.trace("LCIA method {} already exists, not imported", methodId);
+			infos.ignored(method);
 			return;
 		}
 
@@ -449,9 +484,10 @@ public class EcoSpold01Import implements FileImport {
 			ImpactCategory lciaCategory = mapReferenceFunction(dataSet
 					.getReferenceFunction());
 			mapFactors(dataSet.getExchanges(), lciaCategory);
-			method.getImpactCategories().add(lciaCategory);
+			method.impactCategories.add(lciaCategory);
 		}
 		db.put(method, methodId);
+		infos.imported(method);
 	}
 
 }

@@ -9,7 +9,7 @@ import org.openlca.core.model.ModelType;
 import org.openlca.core.model.Unit;
 import org.openlca.core.model.UnitGroup;
 import org.openlca.core.model.Version;
-import org.openlca.ilcd.util.LangString;
+import org.openlca.ilcd.commons.LangString;
 import org.openlca.ilcd.util.UnitExtension;
 import org.openlca.ilcd.util.UnitGroupBag;
 
@@ -25,7 +25,7 @@ public class UnitGroupImport {
 
 	public UnitGroup run(org.openlca.ilcd.units.UnitGroup group)
 			throws ImportException {
-		this.ilcdUnitGroup = new UnitGroupBag(group, config.ilcdConfig);
+		this.ilcdUnitGroup = new UnitGroupBag(group, config.langs);
 		UnitGroup oGroup = findExisting(ilcdUnitGroup.getId());
 		if (oGroup != null) {
 			new UnitGroupSync(oGroup, ilcdUnitGroup, config).run(config.db);
@@ -40,7 +40,7 @@ public class UnitGroupImport {
 			// TODO: check if reference unit is in database!
 			return unitGroup;
 		org.openlca.ilcd.units.UnitGroup group = tryGetUnitGroup(unitGroupId);
-		ilcdUnitGroup = new UnitGroupBag(group, config.ilcdConfig);
+		ilcdUnitGroup = new UnitGroupBag(group, config.langs);
 		return createNew();
 	}
 
@@ -93,8 +93,7 @@ public class UnitGroupImport {
 
 	private void validateInput() throws ImportException {
 		if (ilcdUnitGroup.getReferenceUnitId() == null
-				|| ilcdUnitGroup.getName() == null
-				|| ilcdUnitGroup.getUnits().size() == 0) {
+				|| ilcdUnitGroup.getName() == null) {
 			String message = "Invalid input: unit group data set.";
 			throw new ImportException(message);
 		}
@@ -114,13 +113,13 @@ public class UnitGroupImport {
 	private void createUnits() {
 		Integer refUnitId = ilcdUnitGroup.getReferenceUnitId();
 		for (org.openlca.ilcd.units.Unit iUnit : ilcdUnitGroup.getUnits()) {
+			if (iUnit == null)
+				continue;
 			Unit oUnit = new Unit();
 			unitGroup.getUnits().add(oUnit);
 			mapUnitAttributes(iUnit, oUnit);
-			if (iUnit.getDataSetInternalID() != null) {
-				int id = iUnit.getDataSetInternalID().intValue();
-				if (id == refUnitId)
-					unitGroup.setReferenceUnit(oUnit);
+			if (refUnitId != null && refUnitId == iUnit.id) {
+				unitGroup.setReferenceUnit(oUnit);
 			}
 		}
 	}
@@ -131,15 +130,15 @@ public class UnitGroupImport {
 			oUnit.setRefId(extension.getUnitId());
 		else
 			oUnit.setRefId(UUID.randomUUID().toString());
-		oUnit.setName(iUnit.getName());
-		oUnit.setDescription(LangString.get(iUnit.getGeneralComment(),
-				config.ilcdConfig));
-		oUnit.setConversionFactor(iUnit.getMeanValue());
+		oUnit.setName(iUnit.name);
+		oUnit.setDescription(LangString.getFirst(iUnit.comment,
+				config.langs));
+		oUnit.setConversionFactor(iUnit.factor);
 	}
 
 	private void saveInDatabase(UnitGroup obj) throws ImportException {
 		try {
-			config.db.createDao(UnitGroup.class).insert(obj);
+			new UnitGroupDao(config.db).insert(obj);
 		} catch (Exception e) {
 			String message = String.format(
 					"Save operation failed in unit group %s.",

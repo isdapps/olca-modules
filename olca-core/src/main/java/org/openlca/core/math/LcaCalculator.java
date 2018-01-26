@@ -5,6 +5,8 @@ import org.openlca.core.matrix.ImpactMatrix;
 import org.openlca.core.matrix.InventoryMatrix;
 import org.openlca.core.matrix.LongPair;
 import org.openlca.core.matrix.TechIndex;
+import org.openlca.core.matrix.format.IMatrix;
+import org.openlca.core.matrix.solvers.IMatrixSolver;
 import org.openlca.core.results.ContributionResult;
 import org.openlca.core.results.FullResult;
 import org.openlca.core.results.LinkContributions;
@@ -137,10 +139,10 @@ public class LcaCalculator {
 		if (costVector != null) {
 			result.hasCostResults = true;
 			addDirectCosts(result, scalingVector);
-			IMatrix costValues = costVector.asMatrix(solver.getMatrixFactory());
+			IMatrix costValues = costVector.asMatrix(solver);
 			IMatrix upstreamCosts = solver.multiply(costValues, inverse);
 			solver.scaleColumns(upstreamCosts, demands);
-			result.totalCostResult = upstreamCosts.getEntry(0, refIdx);
+			result.totalCostResult = upstreamCosts.get(0, refIdx);
 			result.upstreamCostResults = upstreamCosts;
 		}
 
@@ -180,7 +182,7 @@ public class LcaCalculator {
 			double[] scalingVector) {
 		double[] tr = new double[scalingVector.length];
 		for (int i = 0; i < scalingVector.length; i++) {
-			tr[i] = scalingVector[i] * techMatrix.getEntry(i, i);
+			tr[i] = scalingVector[i] * techMatrix.get(i, i);
 		}
 		return tr;
 	}

@@ -8,6 +8,9 @@ import org.junit.Before;
 import org.junit.Test;
 import org.openlca.core.Tests;
 import org.openlca.core.database.IDatabase;
+import org.openlca.core.database.ImpactMethodDao;
+import org.openlca.core.database.ProcessDao;
+import org.openlca.core.database.SocialIndicatorDao;
 import org.openlca.core.database.UnitGroupDao;
 import org.openlca.core.model.Exchange;
 import org.openlca.core.model.ImpactCategory;
@@ -42,7 +45,7 @@ public class UnitUseSearchTest {
 
 	@After
 	public void tearDown() {
-		database.createDao(UnitGroup.class).delete(unitGroup);
+		new UnitGroupDao(database).delete(unitGroup);
 	}
 
 	@Test
@@ -56,7 +59,7 @@ public class UnitUseSearchTest {
 	public void testFindInImpactMethods() {
 		ImpactMethod method = createMethod();
 		List<CategorizedDescriptor> results = search.findUses(unit);
-		database.createDao(ImpactMethod.class).delete(method);
+		new ImpactMethodDao(database).delete(method);
 		BaseDescriptor expected = Descriptors.toDescriptor(method);
 		Assert.assertEquals(1, results.size());
 		Assert.assertEquals(expected, results.get(0));
@@ -66,18 +69,18 @@ public class UnitUseSearchTest {
 		ImpactMethod method = new ImpactMethod();
 		method.setName("method");
 		ImpactFactor iFactor = new ImpactFactor();
-		iFactor.setUnit(unit);
+		iFactor.unit = unit;
 		ImpactCategory category = new ImpactCategory();
-		category.getImpactFactors().add(iFactor);
-		method.getImpactCategories().add(category);
-		return database.createDao(ImpactMethod.class).insert(method);
+		category.impactFactors.add(iFactor);
+		method.impactCategories.add(category);
+		return new ImpactMethodDao(database).insert(method);
 	}
 
 	@Test
 	public void testFindInProcesses() {
 		Process process = createProcess();
 		List<CategorizedDescriptor> results = search.findUses(unit);
-		database.createDao(Process.class).delete(process);
+		new ProcessDao(database).delete(process);
 		BaseDescriptor expected = Descriptors.toDescriptor(process);
 		Assert.assertEquals(1, results.size());
 		Assert.assertEquals(expected, results.get(0));
@@ -87,16 +90,17 @@ public class UnitUseSearchTest {
 		Process process = new Process();
 		process.setName("process");
 		Exchange exchange = new Exchange();
-		exchange.setUnit(unit);
+		final Unit unit1 = unit;
+		exchange.unit = unit1;
 		process.getExchanges().add(exchange);
-		return database.createDao(Process.class).insert(process);
+		return new ProcessDao(database).insert(process);
 	}
 
 	@Test
 	public void testFindInSocialIndicator() {
 		SocialIndicator indicator = createSocialIndicator();
 		List<CategorizedDescriptor> results = search.findUses(unit);
-		database.createDao(SocialIndicator.class).delete(indicator);
+		new SocialIndicatorDao(database).delete(indicator);
 		BaseDescriptor expected = Descriptors.toDescriptor(indicator);
 		Assert.assertEquals(1, results.size());
 		Assert.assertEquals(expected, results.get(0));
@@ -106,6 +110,6 @@ public class UnitUseSearchTest {
 		SocialIndicator indicator = new SocialIndicator();
 		indicator.setName("indicator");
 		indicator.activityUnit = unit;
-		return database.createDao(SocialIndicator.class).insert(indicator);
+		return new SocialIndicatorDao(database).insert(indicator);
 	}
 }

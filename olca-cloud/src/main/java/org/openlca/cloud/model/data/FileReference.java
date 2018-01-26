@@ -7,23 +7,29 @@ import org.openlca.core.model.ModelType;
 public class FileReference implements Serializable {
 
 	private static final long serialVersionUID = -6108676257021661077L;
-	private String refId;
-	private ModelType type;
+	public String refId;
+	public ModelType type;
 
-	public String getRefId() {
-		return refId;
+	@Override
+	public int hashCode() {
+		return (type.name() + "_" + refId).hashCode();
 	}
 
-	public void setRefId(String refId) {
-		this.refId = refId;
+	@Override
+	public boolean equals(Object obj) {
+		if (obj == this)
+			return true;
+		if (!(obj instanceof FileReference))
+			return false;
+		FileReference ref = (FileReference) obj;
+		if (ref.type != type)
+			return false;
+		return ref.refId.equals(refId);
 	}
-
-	public ModelType getType() {
-		return type;
-	}
-
-	public void setType(ModelType type) {
-		this.type = type;
+	
+	@Override
+	public String toString() {
+		return getClass().getName() + " - refId: " + refId + ", type: " + type.name();
 	}
 
 }

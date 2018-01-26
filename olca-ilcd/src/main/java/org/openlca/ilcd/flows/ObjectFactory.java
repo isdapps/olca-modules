@@ -5,6 +5,8 @@ import javax.xml.bind.annotation.XmlElementDecl;
 import javax.xml.bind.annotation.XmlRegistry;
 import javax.xml.namespace.QName;
 
+import org.openlca.ilcd.commons.Publication;
+
 /**
  * This object contains factory methods for each Java content interface and Java
  * element interface generated in the org.openlca.ilcd.flows package.
@@ -55,11 +57,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link DataSetInformation }
+	 * Create an instance of {@link DataSetInfo }
 	 * 
 	 */
-	public DataSetInformation createDataSetInformation() {
-		return new DataSetInformation();
+	public DataSetInfo createDataSetInformation() {
+		return new DataSetInfo();
 	}
 
 	/**
@@ -79,11 +81,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link FlowInformation }
+	 * Create an instance of {@link FlowInfo }
 	 * 
 	 */
-	public FlowInformation createFlowInformation() {
-		return new FlowInformation();
+	public FlowInfo createFlowInformation() {
+		return new FlowInfo();
 	}
 
 	/**
@@ -95,19 +97,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link FlowPropertyList }
+	 * Create an instance of {@link FlowPropertyRef }
 	 * 
 	 */
-	public FlowPropertyList createFlowPropertyList() {
-		return new FlowPropertyList();
-	}
-
-	/**
-	 * Create an instance of {@link FlowPropertyReference }
-	 * 
-	 */
-	public FlowPropertyReference createFlowPropertyReference() {
-		return new FlowPropertyReference();
+	public FlowPropertyRef createFlowPropertyReference() {
+		return new FlowPropertyRef();
 	}
 
 	/**
@@ -127,11 +121,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link AdministrativeInformation }
+	 * Create an instance of {@link AdminInfo }
 	 * 
 	 */
-	public AdministrativeInformation createAdministrativeInformation() {
-		return new AdministrativeInformation();
+	public AdminInfo createAdministrativeInformation() {
+		return new AdminInfo();
 	}
 
 	/**
@@ -143,11 +137,11 @@ public class ObjectFactory {
 	}
 
 	/**
-	 * Create an instance of {@link ModellingAndValidation }
+	 * Create an instance of {@link Modelling }
 	 * 
 	 */
-	public ModellingAndValidation createModellingAndValidation() {
-		return new ModellingAndValidation();
+	public Modelling createModellingAndValidation() {
+		return new Modelling();
 	}
 
 	/**
